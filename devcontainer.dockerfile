@@ -1,6 +1,9 @@
 # Use the official Ubuntu 24.04 (Noble) base image
 FROM incebellipipo/devcontainer:jazzy
 
+# allow access to devices for user developer
+RUN sudo groupadd input && sudo usermod -aG input developer
+
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 # Source ROS2 setup script

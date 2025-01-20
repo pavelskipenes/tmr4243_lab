@@ -1,0 +1,16 @@
+services:
+  ros:
+    build:
+      dockerfile: devcontainer.dockerfile
+      context: .
+    stdin_open: true
+    tty: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev/bus/usb/001/004:/dev/bus/usb/001/004
+      - /dev/input/js0:/dev/input/js0
+      - .:/home/developer/ros_ws/src/
+    environment:
+      - DISPLAY=${DISPLAY}
+    devices:
+      - /dev/dri:/dev/dri

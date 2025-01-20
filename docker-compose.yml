@@ -14,3 +14,4 @@ services:
       - DISPLAY=${DISPLAY}
     devices:
       - /dev/dri:/dev/dri
+    network_mode: host

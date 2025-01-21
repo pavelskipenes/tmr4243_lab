@@ -8,18 +8,9 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - .:/home/developer/ros_ws/src/
-      # see Docker.md
-      - /usr/bin/usbip:/archroot/usr/bin/usbip:ro
-      - /usr/lib/libinput-config.so:/archroot/usr/lib/libinput-config.so:ro
-      - /usr/lib/libusbip.so.0:/archroot/usr/lib/libusbip.so.0:ro
-      - /usr/lib/libudev.so.1:/archroot/usr/lib/libudev.so.1:ro
-      - /usr/lib/libcap.so.2:/archroot/usr/lib/libcap.so.2:ro
-      - /usr/lib/libgcc_s.so.1:/archroot/usr/lib/libgcc_s.so.1:ro
-      - /lib64/ld-linux-x86-64.so.2:/archroot/lib64/ld-linux-x86-64.so.2:ro
-      - /usr/share/hwdata/:/archroot/usr/share/hwdata/
+      - /dev/input/:/dev/input/
     environment:
       - DISPLAY=${DISPLAY}
     devices:
       - /dev/dri:/dev/dri
-    network_mode: host
-    # privileged: true
+    privileged: true

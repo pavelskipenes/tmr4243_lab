@@ -54,6 +54,7 @@ Don't try any other workaround.
 sources:
 - https://wiki.archlinux.org/title/USB/IP
 - https://bbs.archlinux.org/viewtopic.php?id=186112
+- https://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git/tree/tools/usb/usbip/src/usbip_list.c
 
 ## on host
 ```bash
@@ -98,6 +99,7 @@ if you're on Debian based host it should be enough with this:
 ```bash
 sudo apt update
 sudo apt install -y linux-tools-$(uname -r) # 🤡
+sudo usbip attach -r 127.0.0.1 -b "1-2"
 ```
 However Ubuntu likes to ship 10 year old packages to `$(uname -r)` will never be up to date compared to Arch.
 
@@ -124,7 +126,10 @@ volumes:
       - /usr/lib/libcap.so.2:/archroot/usr/lib/libcap.so.2:ro
       - /usr/lib/libgcc_s.so.1:/archroot/usr/lib/libgcc_s.so.1:ro
       - /lib64/ld-linux-x86-64.so.2:/archroot/lib64/ld-linux-x86-64.so.2:ro
+      - /usr/lib/libc.so.6:/usr/lib/libc.so.6:ro
+      - /usr/lib32/libc.so.6:/usr/lib32/libc.so.6:ro
       - /usr/share/hwdata/:/archroot/usr/share/hwdata/ # needs to be writable
+      - /sys/devices/platform/vhci_hcd.0/attach:/sys/devices/platform/vhci_hcd.0/attach # needs to be writable
 ```
       
 ```bash
@@ -137,8 +142,8 @@ Exportable USB devices
            : /sys/devices/pci0000:00/0000:00:14.0/usb1/1-2
            : (Defined at Interface level) (00/00/00)
 ```
+the error is probably related to the file that contains the mapping between vendor id -> vendor name and product id -> product name. This explains the "unknown vendor" and "unknown product" text in the output. But hey, the program still runs and lists the available device 🤷
 
-ended up here before going to bed:
 ```
 LD_LIBRARY_PATH=/archroot/usr/lib/:/archroot/lib/:/archroot/lib64/:/archroot/usr/lib64/ sudo /archroot/usr/bin/usbip attach -r 127.0.0.1 -b "1-2"
 /archroot/usr/bin/usbip: error while loading shared libraries: libusbip.so.0: cannot open shared object file: No such file or directory
@@ -153,6 +158,81 @@ LD_LIBRARY_PATH=/archroot/usr/lib/:/archroot/lib/:/archroot/lib64/:/archroot/usr
         /lib64/ld-linux-x86-64.so.2 (0x00007694d31e8000)
 
 ```
+problem above is related that `sudo` drops the environment varialbes.
+```
+sudo env LD_LIBRARY_PATH=/archroot/usr/lib/:/archroot/lib/:/archroot/lib64/:/archroot/usr/lib64/ /archroot/usr/bin/usbip --debug attach -r 127.0.0.1 -d "1-2"
+usbip: debug: usbip_attach.c:100:[import_device] got free port 0
+libusbip: debug: vhci_driver.c:367:[usbip_vhci_attach_device2] writing: 0 3 65538 2
+libusbip: debug: vhci_driver.c:372:[usbip_vhci_attach_device2] attach attribute path: /sys/devices/platform/vhci_hcd.0/attach
+usbip: debug: sysfs_utils.c:18:[write_sysfs_attribute] error opening attribute /sys/devices/platform/vhci_hcd.0/attach
+libusbip: debug: vhci_driver.c:376:[usbip_vhci_attach_device2] write_sysfs_attribute failed
+usbip: error: import device
+```
+`/sys/devices/platform/vhci_hcd.0/attach` is not writable. lets add that to `docker-compose.yml`.
+
+```
+sudo env LD_LIBRARY_PATH=/archroot/usr/lib/:/archroot/lib/:/archroot/lib64/:/archroot/usr/lib64/ /archroot/usr/bin/usbip --debug attach -r 127.0.0.1 -d "1-2"
+...
+usbip: debug: usbip_attach.c:100:[import_device] got free port 0
+libusbip: debug: vhci_driver.c:367:[usbip_vhci_attach_device2] writing: 0 3 65538 2
+libusbip: debug: vhci_driver.c:372:[usbip_vhci_attach_device2] attach attribute path: /sys/devices/platform/vhci_hcd.0/attach
+libusbip: debug: vhci_driver.c:380:[usbip_vhci_attach_device2] attached port: 0
+```
+Wait, did it work?
+```
+echo $?
+0
+```
+bingo🎉
+
+Hopefully now ros2 will recognise the device now.
+
+```
+ros2 run joy joy_node
+<no-output>
+```
+fuck...
+
+```
+usbip list --local # host
+ - busid 1-2 (054c:09cc)
+   Sony Corp. : DualShock 4 [CUH-ZCT2x] (054c:09cc)
+
+ - busid 1-5 (8087:0a2b)
+   Intel Corp. : Bluetooth wireless interface (8087:0a2b)
+
+ - busid 1-7 (05c8:03c0)
+   Cheng Uei Precision Industry Co., Ltd (Foxlink) : unknown product (05c8:03c0)
+
+```
+Seems like even though I managed to attach the device from within docker it got handeled by the kernel. Since the kernel is shared, it got added back to the list on the host 🤦
+
+## native device detection
+
+playing around with `evtest-qt-git` shows that `/dev/input/event16` is the deviece and is detected and working fine on host.
+
+Problem with docker environment is that it does not match the group ids with the one used on the host. When guest sees the files in the mounted directory `/dev/input/` it sees the group id that is present on host. Then the guest looks up the group name in `/etc/groups` file. mounting that file should work fine for debian to debian system but not from arch to debian as group names and their purpouse does not necesarrily match.
+
+Solution is to create the input group which is the group owner of the `/dev/input/` files and assign the correct group id on images construction:
+```
+# host
+getent group input
+input:x:994:user
+```
+```Dockerfile
+RUN groupadd -g 914 input && usermod -aG input developer
+```
+Not pretty.
+
+# `ros2 node list` return no result
+this is a network issue see [ros2#1616](https://github.com/ros2/ros2/issues/1616).
+remove
+```yml
+
+network: host
+```
+from `docker-compose.yml`
+
 
 # Troubleshooting
 ## `could not connect to display :0`
@@ -176,4 +256,10 @@ LD_LIBRARY_PATH=/archroot/usr/lib/:/archroot/lib/:/archroot/lib64/:/archroot/usr
 ```
 Following error indicates that access to display server on host is fucked. Read the [wiki](https://wiki.archlinux.org/title/Docker#Run_graphical_programs_inside_a_container). default configuration for `firewalld` should not interfere.
 
+## `ros2 run joy joy_node` does not detect the device
+add 
+```docker-compose.yml
+priveleged: true
+```
+to the `docker-compose.yml` and build again.
 

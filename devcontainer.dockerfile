@@ -2,7 +2,7 @@
 FROM incebellipipo/devcontainer:jazzy
 
 # allow access to devices for user developer
-RUN sudo groupadd input && sudo usermod -aG input developer
+RUN sudo groupadd -g 994 input && sudo usermod -aG input developer
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive

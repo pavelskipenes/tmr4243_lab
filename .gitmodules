@@ -1,0 +1,3 @@
+[submodule "cybership_software_suite"]
+	path = cybership_software_suite
+	url = git@github.com:NTNU-MCS/cybership_software_suite.git

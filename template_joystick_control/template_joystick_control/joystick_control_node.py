@@ -70,10 +70,26 @@ class JoystickControl(rclpy.node.Node):
 
         self.joystick_mapping = JoystickMapping()
 
+        # joystick_params = [
+        #     'LEFT_STICK_HORIZONTAL', 'LEFT_STICK_VERTICAL', 'RIGHT_STICK_HORIZONTAL',
+        #     'RIGHT_STICK_VERTICAL', 'LEFT_TRIGGER', 'RIGHT_TRIGGER',
+        #     'A_BUTTON', 'B_BUTTON', 'X_BUTTON', 'Y_BUTTON'
+        # ]
         joystick_params = [
-            'LEFT_STICK_HORIZONTAL', 'LEFT_STICK_VERTICAL', 'RIGHT_STICK_HORIZONTAL', 
-            'RIGHT_STICK_VERTICAL', 'LEFT_TRIGGER', 'RIGHT_TRIGGER', 
-            'A_BUTTON', 'B_BUTTON', 'X_BUTTON', 'Y_BUTTON'
+            "LEFT_STICK_HORIZONTAL",
+            "LEFT_STICK_VERTICAL",
+            "RESERVED",
+            "RIGHT_STICK_HORIZONTAL",
+            "RIGHT_STICK_VERTICAL",
+            "RESERVED2",
+            "RESERVED3",
+            "RESERVED4",
+            "A_BUTTON",
+            "X_BUTTON",
+            "Y_BUTTON",
+            "B_BUTTON",
+            "LEFT_TRIGGER",
+            "RIGHT_TRIGGER",
         ]
 
         for param in joystick_params:

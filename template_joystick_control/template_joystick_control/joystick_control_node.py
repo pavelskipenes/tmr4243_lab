@@ -53,8 +53,8 @@ class JoystickControl(rclpy.node.Node):
         self.subs["eta"] = self.create_subscription(
             std_msgs.msg.Float32MultiArray, '/tmr4243/state/eta', self.eta_callback, 10)
 
-        self.pubs["u_cmd"] = self.create_publisher(
-            std_msgs.msg.Float32MultiArray, '/tmr4243/command/u', 10)
+        self.pubs["tau_cmd"] = self.create_publisher(
+            std_msgs.msg.Float32MultiArray, '/tmr4243/command/tau', 10)
 
         self.task = JoystickControl.TASK_SIMPLE
         self.declare_parameter(
@@ -96,20 +96,33 @@ class JoystickControl(rclpy.node.Node):
             self.declare_parameter(param, 0)
 
         for param in joystick_params:
-            setattr(self.joystick_mapping, param, self.get_parameter(param).value)
+            setattr(self.joystick_mapping, param,
+                    self.get_parameter(param).value)
 
         self.last_eta_msg = std_msgs.msg.Float32MultiArray()
 
         self.timer = self.create_timer(0.1, self.timer_callback)
 
     def timer_callback(self):
-        self.task = self.get_parameter('task').get_parameter_value().string_value
+        self.task = self.get_parameter(
+            'task').get_parameter_value().string_value
 
         self.get_logger().info(
             f"Parameter task: {self.task}", throttle_duration_sec=1.0)
 
     def joy_callback(self, msg):
         result = np.zeros((5, 1), dtype=float)
+        result = joystick_simple(msg, self.joystick_mapping)
+        assert len(result) == 5
+
+        self.get_logger().info(
+            f"{result[0]}, {result[1]}, {result[2]}, {result[3]}, {result[4]}")
+
+        tau_cmd = std_msgs.msg.Float32MultiArray()
+        tau_cmd.data = result.flatten().tolist()
+        self.pubs["tau_cmd"].publish(tau_cmd)
+
+        return
 
         if self.task == JoystickControl.TASK_SIMPLE:
             result = joystick_simple(msg, self.joystick_mapping)
@@ -117,7 +130,8 @@ class JoystickControl(rclpy.node.Node):
         elif self.task == JoystickControl.TASK_BASIN:
 
             if self.last_eta_msg is None:
-                self.get_logger().warn(f"Last eta message is {self.last_eta_msg}, cannot basin relative", throttle_duration_sec=1.0)
+                self.get_logger().warn(
+                    f"Last eta message is {self.last_eta_msg}, cannot basin relative", throttle_duration_sec=1.0)
                 return
 
             if len(self.last_eta_msg.data) != 3:
@@ -125,24 +139,24 @@ class JoystickControl(rclpy.node.Node):
                     f"Last eta message has length of {len(self.last_eta_msg.data)} but it should be 3. Aborting...", throttle_duration_sec=1.0)
                 return
 
-            result = joystick_force_basin_relative(msg, np.array(self.last_eta_msg.data, dtype=float), self.joystick_mapping)
+            result = joystick_force_basin_relative(msg, np.array(
+                self.last_eta_msg.data, dtype=float), self.joystick_mapping)
 
         elif self.task == JoystickControl.TASK_BODY:
             result = joystick_force_body_relative(msg, self.joystick_mapping)
 
+        self.get_logger().info(
+            f"{result[0]}, {result[1]}, {result[2]}, {result[3]}, {result[4]}")
 
-        if len(result) != 5:
-            self.get_logger().warn(
-                f"Result has length of {len(result)} but it should be 5. Aborting...", throttle_duration_sec=1.0)
-            return
+        assert len(result) == 5
 
-        u_cmd = std_msgs.msg.Float32MultiArray()
-        u_cmd.data = result.flatten().tolist()
-        self.pubs["u_cmd"].publish(u_cmd)
-
+        tau_cmd = std_msgs.msg.Float32MultiArray()
+        tau_cmd.data = result.flatten().tolist()
+        self.pubs["tau_cmd"].publish(tau_cmd)
 
     def eta_callback(self, msg):
         self.last_eta_msg = msg
+
 
 def main(args=None):
     # Initialize the node

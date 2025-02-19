@@ -29,7 +29,7 @@ import std_msgs.msg
 import sensor_msgs.msg
 import rcl_interfaces.msg
 
-from template_joystick_control.joystick_mapping import JoystickMapping
+from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
 from template_joystick_control.joystick_simple import joystick_simple
 from template_joystick_control.joystick_force_basin_relative import joystick_force_basin_relative
 from template_joystick_control.joystick_force_body_relative import joystick_force_body_relative
@@ -68,35 +68,55 @@ class JoystickControl(rclpy.node.Node):
             )
         )
 
-        self.joystick_mapping = JoystickMapping()
+        self.joystick_axes = JoystickAxes()
+        self.joystick_buttons = JoystickButtons()
 
         # joystick_params = [
         #     'LEFT_STICK_HORIZONTAL', 'LEFT_STICK_VERTICAL', 'RIGHT_STICK_HORIZONTAL',
         #     'RIGHT_STICK_VERTICAL', 'LEFT_TRIGGER', 'RIGHT_TRIGGER',
         #     'A_BUTTON', 'B_BUTTON', 'X_BUTTON', 'Y_BUTTON'
         # ]
-        joystick_params = [
-            "LEFT_STICK_HORIZONTAL",
-            "LEFT_STICK_VERTICAL",
-            "RESERVED",
-            "RIGHT_STICK_HORIZONTAL",
-            "RIGHT_STICK_VERTICAL",
-            "RESERVED2",
-            "RESERVED3",
-            "RESERVED4",
-            "A_BUTTON",
-            "X_BUTTON",
-            "Y_BUTTON",
-            "B_BUTTON",
-            "LEFT_TRIGGER",
-            "RIGHT_TRIGGER",
+        joystick_buttons = [
+            "A",
+            "B",
+            "X",
+            "Y",
+            "BACK",
+            "GUIDE",
+            "START",
+            "STICK_LEFT",
+            "STICK_RIGHT",
+            "SHOULDER_LEFT",
+            "SHOULDER_RIGHT",
+            "DPAD_UP",
+            "DPAD_DOWN",
+            "DPAD_LEFT",
+            "DPAD_RIGHT",
+            "MISC1",
+            "PADDLE1",
+            "PADDLE2",
+            "PADDLE3",
+            "PADDLE4",
+            "TOUCHPAD",
+        ]
+        joystick_axes = [
+            "LEFT_X",
+            "LEFT_Y",
+            "RIGHT_X",
+            "RIGHT_Y",
+            "TRIGGER_LEFT",
+            "TRIGGER_RIGHT"
         ]
 
-        for param in joystick_params:
+        for param in joystick_buttons + joystick_axes:
             self.declare_parameter(param, 0)
 
-        for param in joystick_params:
-            setattr(self.joystick_mapping, param,
+        for param in joystick_buttons:
+            setattr(self.joystick_buttons, param,
+                    self.get_parameter(param).value)
+
+        for param in joystick_axes:
+            setattr(self.joystick_axes, param,
                     self.get_parameter(param).value)
 
         self.last_eta_msg = std_msgs.msg.Float32MultiArray()
@@ -112,15 +132,24 @@ class JoystickControl(rclpy.node.Node):
 
     def joy_callback(self, msg):
         result = np.zeros((5, 1), dtype=float)
-        result = joystick_simple(msg, self.joystick_mapping)
-        assert len(result) == 5
+        result = joystick_simple(
+            msg, self.joystick_buttons, self.joystick_axes)
+        assert len(result) == 6
+        result = result.flatten()
+
+        def round_2(val):
+            return round(val, 2)
+
+        # tau_cmd = std_msgs.msg.Float32MultiArray()
+        # tau_cmd.data = result.flatten().tolist()
+        # self.pubs["tau_cmd"].publish(tau_cmd)
+
+        result = list(map(round_2, result))
 
         self.get_logger().info(
-            f"{result[0]}, {result[1]}, {result[2]}, {result[3]}, {result[4]}")
+            f"\nleft_x\t\t\tleft_y\t\t\tleft_trigger\t\t\tright_x\t\t\tright_y\t\t\tright_trigger\n" +
+            f"{result[0]},\t\t\t{result[1]},\t\t\t{result[2]},\t\t\t{result[3]}\t\t\t{result[4]}\t\t\t{result[5]}\n")
 
-        tau_cmd = std_msgs.msg.Float32MultiArray()
-        tau_cmd.data = result.flatten().tolist()
-        self.pubs["tau_cmd"].publish(tau_cmd)
 
         return
 

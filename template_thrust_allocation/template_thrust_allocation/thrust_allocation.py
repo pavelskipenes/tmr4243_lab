@@ -20,7 +20,7 @@ def weighted_pseudoinverse(B: npt.ArrayLike, W: npt.ArrayLike) -> npt.ArrayLike:
 # output: Optimal force and angles
 # azimuth_angles is unused for this method
 def extended(desired_forces: list, azimuth_angles: list, thrust_configuration: list):
-    B_pseudo = weighted_pseudoinverse(thrust_configuration, W)
+    B_pseudo = weighted_pseudoinverse(thrust_configuration, W_extended)
     # Calculate optimal force F*
     F_star = B_pseudo @ tau_cmd + (np.eye(5) - B_pseudo @ thrust_configuration) @ desired_forces
     F_cmd, alpha_cmd = compute_F_command(F_star)
@@ -81,8 +81,8 @@ K = np.diag([2.629, 1.03, 1.03])  # k0, k1, k2
 
 # Azimuth-angle(rad) in Bias-mode
 alpha0 = np.pi / 2
-alpha1 = np.pi / 2
-alpha2 = np.pi / 2
+alpha1 = np.pi
+alpha2 = np.pi
 azimuth_angles = np.array([alpha0, alpha1, alpha2])
 
 # Thruster configuration matrix (B-matrix)
@@ -101,16 +101,17 @@ B_extended = np.array([
 
 # Weight matrix 
 W = np.diag([1, 1, 1]) # placeholder
-#W_extended = np.diag([5, 1, 1, 1, 1]) # placeholder 
+W_extended = np.diag([1, 1, 1, 1, 1]) # placeholder 
 
 desired_forces = np.array([1, 1, 1]) # placeholder
-#desired_forces_extended = np.array([1, 1, 1, 1, 1]) # placeholder
+desired_forces_extended = np.array([1, 1, 1, 1, 1]) # placeholder
 
 # Thrust command (Body frame)
-tau_cmd = np.array([1, -1, -0.5])  # Forces in X, Y and moment N
+tau_cmd = np.array([-2, 0, 0])  # Forces in X, Y and moment N
 
 # Test functions
-optimal_force, alpha_cmd = bias_mode(desired_forces, azimuth_angles, B_bias)
+#optimal_force, alpha_cmd = bias_mode(desired_forces, azimuth_angles, B_bias)
+optimal_force, alpha_cmd = extended(desired_forces_extended, azimuth_angles, B_extended)
 
 # Calculate optimal thruster input u*
 u_star = np.linalg.inv(K) @ optimal_force  # Bruk bare de første 3 inputene

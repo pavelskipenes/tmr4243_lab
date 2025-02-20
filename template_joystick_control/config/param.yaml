@@ -1,39 +1,30 @@
 /**:
   ros__parameters:
     # https://docs.ros.org/en/ros2_packages/jazzy/api/joy/index.html#ros-2-driver-for-generic-joysticks-and-game-controllers
+    # Even though documentation provides indexies, the indexies are incorrect for playstation 4 controller on linux with both package joy and joy_linux
+    # TODO: this is ps4 specific mappings. this configuration should reflect that somehow instead of being in global scope
 
-    # Axes
-    # Following parameters has been tested on PlayStation 4 controller with packages joy and joy_linux.
+    # Axes. positive values to the left and up
     LEFT_X: 0
     LEFT_Y: 1
-    TRIGGER_LEFT: 2 # index 4 in docs. but 2 in my case?
+    TRIGGER_LEFT: 2 # returns 1.0 when idle, -1.0 when fully pressed
     RIGHT_X: 3
     RIGHT_Y: 4
-    TRIGGER_RIGHT: 5
+    TRIGGER_RIGHT: 5 # returns 1.0 when idle, -1.0 when fully pressed
+    DPAD_HORIZONTAL: 6 # returns one of {-1.0, 0.0, 1.0}
+    DPAD_VERTICAL: 7
 
     # Buttons
-    # TODO: needs testing
-    A: 0 # Cross
-    B: 1 # Square
-    X: 2 # Circle
-    Y: 3 # Triangle
-    BACK: 4 # Select
-    GUIDE: 5 # Middle/Manufacturer Button
-    START: 6
-    STICK_LEFT: 7
-    STICK_RIGHT: 8
-    SHOULDER_LEFT: 9
-    SHOULDER_RIGHT: 10
-    DPAD_UP: 11
-    DPAD_DOWN: 12
-    DPAD_LEFT: 13
-    DPAD_RIGHT: 14
-    MISC1: 15 # Depends on the controller manufacturer, but is usually at a similar location on the controller as back/start
-    PADDLE1: 16 # Upper left, facing the back of the controller if present
-    PADDLE2: 17 # Upper right, facing the back of the controller if present
-    PADDLE3: 18 # Lower left, facing the back of the controller if present
-    PADDLE4: 19 # Lower right, facing the back of the controller if present
-    TOUCHPAD: 20 # If present. Button status only
-
-
-    
+    # returns 1.0 when pressed, 0 otherwise
+    CROSS: 0
+    CIRCLE: 1
+    TRIANGLE: 2
+    SQUARE: 3
+    SHOULDER_LEFT: 4
+    SHOULDER_RIGHT: 5
+    # 6 and 7 missing
+    SHARE: 8
+    OPTIONS: 9
+    GUIDE: 10 # Middle/Manufacturer Button
+    STICK_LEFT: 11
+    STICK_RIGHT: 12

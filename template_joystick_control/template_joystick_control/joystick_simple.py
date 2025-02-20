@@ -9,28 +9,23 @@ def joystick_simple(
         joystick: sensor_msgs.msg.Joy,
         buttons: JoystickButtons,
         axes: JoystickAxes) -> np.ndarray:
-    # # Tunnel
-    # u0 = (joystick.axes[mapping.RIGHT_TRIGGER] - joystick.axes[mapping.LEFT_TRIGGER]) / 2.0
-    #
-    # # Starboard
-    # u1 = np.linalg.norm(np.array((
-    #     joystick.axes[mapping.LEFT_STICK_HORIZONTAL], joystick.axes[mapping.LEFT_STICK_VERTICAL]
-    # )))
-    # a1 = np.arctan2(joystick.axes[mapping.LEFT_STICK_HORIZONTAL], joystick.axes[mapping.LEFT_STICK_VERTICAL])
-    #
-    # # Starboard
-    # u2 = np.linalg.norm(np.array((
-    #     joystick.axes[mapping.RIGHT_STICK_HORIZONTAL], joystick.axes[mapping.RIGHT_STICK_VERTICAL]
-    # )))
-    # a2 = np.arctan2(joystick.axes[mapping.RIGHT_STICK_HORIZONTAL], joystick.axes[mapping.RIGHT_STICK_VERTICAL])
 
-    tau = [
-        joystick.axes[axes.LEFT_X],
-        joystick.axes[axes.LEFT_Y],
-        joystick.axes[axes.TRIGGER_LEFT],
-        joystick.axes[axes.RIGHT_X],
-        joystick.axes[axes.RIGHT_Y],
-        joystick.axes[axes.TRIGGER_RIGHT],
-    ]
+    # Tunnel
+    u0 = (joystick.axes[axes.TRIGGER_RIGHT] -
+          joystick.axes[axes.TRIGGER_LEFT]) / 2.0
 
-    return np.array([tau], dtype=float).T
+    # Starboard
+    u1 = np.linalg.norm(np.array((
+        joystick.axes[axes.LEFT_X], joystick.axes[axes.LEFT_Y]
+    )))
+    a1 = np.arctan2(joystick.axes[axes.LEFT_X], joystick.axes[axes.LEFT_Y])
+
+    # Starboard
+    u2 = np.linalg.norm(np.array((
+        joystick.axes[axes.RIGHT_X], joystick.axes[axes.RIGHT_Y]
+    )))
+    a2 = np.arctan2(joystick.axes[axes.RIGHT_X], joystick.axes[axes.RIGHT_X])
+
+    tau = [u0, u1, a1, u2, a2]
+
+    return np.array(tau, dtype=float).T

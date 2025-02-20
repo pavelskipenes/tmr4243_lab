@@ -71,42 +71,8 @@ class JoystickControl(rclpy.node.Node):
         self.joystick_axes = JoystickAxes()
         self.joystick_buttons = JoystickButtons()
 
-        # joystick_params = [
-        #     'LEFT_STICK_HORIZONTAL', 'LEFT_STICK_VERTICAL', 'RIGHT_STICK_HORIZONTAL',
-        #     'RIGHT_STICK_VERTICAL', 'LEFT_TRIGGER', 'RIGHT_TRIGGER',
-        #     'A_BUTTON', 'B_BUTTON', 'X_BUTTON', 'Y_BUTTON'
-        # ]
-        joystick_buttons = [
-            "A",
-            "B",
-            "X",
-            "Y",
-            "BACK",
-            "GUIDE",
-            "START",
-            "STICK_LEFT",
-            "STICK_RIGHT",
-            "SHOULDER_LEFT",
-            "SHOULDER_RIGHT",
-            "DPAD_UP",
-            "DPAD_DOWN",
-            "DPAD_LEFT",
-            "DPAD_RIGHT",
-            "MISC1",
-            "PADDLE1",
-            "PADDLE2",
-            "PADDLE3",
-            "PADDLE4",
-            "TOUCHPAD",
-        ]
-        joystick_axes = [
-            "LEFT_X",
-            "LEFT_Y",
-            "RIGHT_X",
-            "RIGHT_Y",
-            "TRIGGER_LEFT",
-            "TRIGGER_RIGHT"
-        ]
+        joystick_axes = JoystickAxes.get_names()
+        joystick_buttons = JoystickButtons.get_names()
 
         for param in joystick_buttons + joystick_axes:
             self.declare_parameter(param, 0)
@@ -120,64 +86,39 @@ class JoystickControl(rclpy.node.Node):
                     self.get_parameter(param).value)
 
         self.last_eta_msg = std_msgs.msg.Float32MultiArray()
-
         self.timer = self.create_timer(0.1, self.timer_callback)
 
     def timer_callback(self):
         self.task = self.get_parameter(
             'task').get_parameter_value().string_value
 
-        self.get_logger().info(
+        self.get_logger().debug(
             f"Parameter task: {self.task}", throttle_duration_sec=1.0)
 
     def joy_callback(self, msg):
-        result = np.zeros((5, 1), dtype=float)
-        result = joystick_simple(
-            msg, self.joystick_buttons, self.joystick_axes)
-        assert len(result) == 6
-        result = result.flatten()
 
-        def round_2(val):
-            return round(val, 2)
-
-        # tau_cmd = std_msgs.msg.Float32MultiArray()
-        # tau_cmd.data = result.flatten().tolist()
-        # self.pubs["tau_cmd"].publish(tau_cmd)
-
-        result = list(map(round_2, result))
-
-        self.get_logger().info(
-            f"\nleft_x\t\t\tleft_y\t\t\tleft_trigger\t\t\tright_x\t\t\tright_y\t\t\tright_trigger\n" +
-            f"{result[0]},\t\t\t{result[1]},\t\t\t{result[2]},\t\t\t{result[3]}\t\t\t{result[4]}\t\t\t{result[5]}\n")
-
-
-        return
+        result = np.zeros((1,5))
 
         if self.task == JoystickControl.TASK_SIMPLE:
-            result = joystick_simple(msg, self.joystick_mapping)
+            result = joystick_simple(msg, self.joystick_buttons, self.joystick_axes)
 
         elif self.task == JoystickControl.TASK_BASIN:
 
             if self.last_eta_msg is None:
-                self.get_logger().warn(
+                self.get_logger().debug(
                     f"Last eta message is {self.last_eta_msg}, cannot basin relative", throttle_duration_sec=1.0)
                 return
 
             if len(self.last_eta_msg.data) != 3:
-                self.get_logger().warn(
+                self.get_logger().debug(
                     f"Last eta message has length of {len(self.last_eta_msg.data)} but it should be 3. Aborting...", throttle_duration_sec=1.0)
                 return
 
             result = joystick_force_basin_relative(msg, np.array(
-                self.last_eta_msg.data, dtype=float), self.joystick_mapping)
+                self.last_eta_msg.data, dtype=float), self.joystick_buttons, self.joystick_axes)
 
         elif self.task == JoystickControl.TASK_BODY:
-            result = joystick_force_body_relative(msg, self.joystick_mapping)
-
-        self.get_logger().info(
-            f"{result[0]}, {result[1]}, {result[2]}, {result[3]}, {result[4]}")
-
-        assert len(result) == 5
+            result = joystick_force_body_relative(msg, self.joystick_buttons, self.joystick_axes)
 
         tau_cmd = std_msgs.msg.Float32MultiArray()
         tau_cmd.data = result.flatten().tolist()

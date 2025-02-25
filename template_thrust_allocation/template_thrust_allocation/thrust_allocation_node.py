@@ -25,12 +25,15 @@ import rclpy.node
 import std_msgs.msg
 import numpy as np
 
-from template_thrust_allocation.thruster_allocation import thruster_allocation
+from template_thrust_allocation.thrust_allocation_class import ThrustAllocator, ThrusterPositions
 
 
 class ThrustAllocation(rclpy.node.Node):
     def __init__(self):
-        super().__init__("tmr4243_thrust_allocation_node")
+        super().__init__("tmr4243_thrust_allocation_node")      # Super calls for parent class properties
+
+        self.thruster_positions = ThrusterPositions()
+        self.thrust_allocator = ThrustAllocator(self.thruster_positions)
 
         self.pubs = {}
         self.subs = {}
@@ -40,32 +43,23 @@ class ThrustAllocation(rclpy.node.Node):
 
         self.pubs["u_cmd"] = self.create_publisher(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/u', 1)
-
-        self.last_tau = np.zeros((3, 1), dtype=float)
-
-        self.timer = self.create_timer(0.1, self.timer_callback)
-
-    def timer_callback(self):
-
+        
+    def tau_cmd_callback(self, msg):    # Handling of incoming command data, i.e. paste to numpy array
+        tau = np.array([msg.data], dtype=float).flatten()
         u_cmd = std_msgs.msg.Float32MultiArray()
-
-        u_cmd.data = thruster_allocation(self.tau).flatten().tobytes()
-
+        u = self.thrust_allocator.allocate_extended(tau).tolist()
+        #u_cmd.data = thruster_allocation(self.tau).flatten().tobytes()  # Convert numpy array to list
+        u_cmd.data = u  # Convert numpy array to list
         self.pubs["u_cmd"].publish(u_cmd)
-
-    def tau_cmd_callback(self, msg):
-
-        self.last_tau = np.array([msg.data], dtype=float).T
-
 
 def main(args=None):
     # Initialize the node
-    rclpy.init(args=args)
+    rclpy.init(args=args)   # Initialize communication between node and ROS2
 
     node = ThrustAllocation()
 
-    rclpy.spin(node)
-    rclpy.shutdown()
+    rclpy.spin(node)    # Starting the node, Loops
+    rclpy.shutdown()    # When node dies, shutoff communication to ROS2
 
 
 if __name__ == '__main__':

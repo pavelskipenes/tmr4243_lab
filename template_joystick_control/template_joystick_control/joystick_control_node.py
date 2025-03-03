@@ -28,10 +28,10 @@ import std_msgs.msg
 import sensor_msgs.msg
 # import rcl_interfaces.msg
 
-from joystick_mapping import JoystickAxes, JoystickButtons
-from tasks import Task, get_actuation_and_channel
-from joystick_emulated import RandomWalk
-from channel import Channel
+from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
+from template_joystick_control.tasks import Task, get_actuation_and_channel
+from template_joystick_control.joystick_emulated import RandomWalk
+from template_joystick_control.channel import Channel
 
 
 class JoystickControl(rclpy.node.Node):

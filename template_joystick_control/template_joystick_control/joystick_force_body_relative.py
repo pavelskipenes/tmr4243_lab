@@ -4,8 +4,9 @@ import sensor_msgs.msg
 import numpy as np
 
 from typing import Tuple
-from joystick_mapping import JoystickAxes
-from channel import Channel
+
+from template_joystick_control.joystick_mapping import JoystickAxes
+from template_joystick_control.channel import Channel
 
 
 def joystick_body(

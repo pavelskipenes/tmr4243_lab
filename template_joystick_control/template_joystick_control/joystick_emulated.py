@@ -3,7 +3,8 @@ import random
 import numpy as np
 
 from typing import Tuple
-from channel import Channel
+
+from template_joystick_control.channel import Channel
 
 
 class RandomWalk:

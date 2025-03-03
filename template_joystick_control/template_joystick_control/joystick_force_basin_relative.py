@@ -4,9 +4,10 @@ import sensor_msgs.msg
 import numpy as np
 
 from typing import Tuple, Optional
-from channel import Channel
-from joystick_mapping import JoystickAxes
 from std_msgs.msg import Float32MultiArray
+
+from template_joystick_control.channel import Channel
+from template_joystick_control.joystick_mapping import JoystickAxes
 
 
 def rotate(heading) -> np.matrix:

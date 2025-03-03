@@ -1,15 +1,17 @@
 import numpy as np
 import sensor_msgs.msg
 
-from enum import Enum
-from channel import Channel
-from joystick_emulated import RandomWalk, joystick_emulator
 from typing import Optional
+from enum import Enum
+
+from channel import Channel
 from std_msgs.msg import Float32MultiArray
-from joystick_mapping import JoystickButtons, JoystickAxes
-from joystick_simple import joystick_simple
-from joystick_force_basin_relative import joystick_basin
-from joystick_force_body_relative import joystick_body
+
+from template_joystick_control.joystick_emulated import RandomWalk, joystick_emulator
+from template_joystick_control.joystick_mapping import JoystickButtons, JoystickAxes
+from template_joystick_control.joystick_simple import joystick_simple
+from template_joystick_control.joystick_force_basin_relative import joystick_basin
+from template_joystick_control.joystick_force_body_relative import joystick_body
 
 
 class Task(str, Enum):

@@ -1,31 +1,40 @@
 #!/usr/bin/env python3
 
+import channel
 import sensor_msgs.msg
 import numpy as np
-from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
+
+from joystick_mapping import JoystickAxes
 
 
 def joystick_simple(
-        joystick: sensor_msgs.msg.Joy,
-        buttons: JoystickButtons,
-        axes: JoystickAxes) -> np.ndarray:
+        joystick_message: sensor_msgs.msg.Joy,
+        axes: JoystickAxes) -> tuple[np.ndarray, channel.Channel]:
+    """
+    simple joystick controller sends raw actuation values for thrusters
+    Thrust allocation are bypassed.
+    """
+    tunnel_thruster_actuation = (joystick_message.axes[axes.TRIGGER_RIGHT] -
+                                 joystick_message.axes[axes.TRIGGER_LEFT]) / 2.0
 
-    # Tunnel
-    u0 = (joystick.axes[axes.TRIGGER_RIGHT] -
-          joystick.axes[axes.TRIGGER_LEFT]) / 2.0
-
-    # Starboard
-    u1 = np.linalg.norm(np.array((
-        joystick.axes[axes.LEFT_X], joystick.axes[axes.LEFT_Y]
+    azimuth_starboard_actuation = np.linalg.norm(np.array((
+        joystick_message.axes[axes.LEFT_X], joystick_message.axes[axes.LEFT_Y]
     )))
-    a1 = np.arctan2(joystick.axes[axes.LEFT_X], joystick.axes[axes.LEFT_Y])
+    azimuth_starboard_angle = np.arctan2(
+        joystick_message.axes[axes.LEFT_X], joystick_message.axes[axes.LEFT_Y])
 
-    # Starboard
-    u2 = np.linalg.norm(np.array((
-        joystick.axes[axes.RIGHT_X], joystick.axes[axes.RIGHT_Y]
+    azimuth_port_actuation = np.linalg.norm(np.array((
+        joystick_message.axes[axes.RIGHT_X], joystick_message.axes[axes.RIGHT_Y]
     )))
-    a2 = np.arctan2(joystick.axes[axes.RIGHT_X], joystick.axes[axes.RIGHT_X])
+    azimuth_port_angle = np.arctan2(
+        joystick_message.axes[axes.RIGHT_X], joystick_message.axes[axes.RIGHT_Y])
 
-    tau = [u0, u1, a1, u2, a2]
+    actuation = [
+        tunnel_thruster_actuation,
+        azimuth_starboard_actuation,
+        azimuth_port_actuation,
+        azimuth_starboard_angle,
+        azimuth_port_angle,
+    ]
 
-    return np.array(tau, dtype=float).T
+    return np.array(actuation, dtype=float).T, channel.Channel.actuation

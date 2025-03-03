@@ -2,20 +2,22 @@
 
 import sensor_msgs.msg
 import numpy as np
-from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
+
+from typing import Tuple
+from joystick_mapping import JoystickAxes
+from channel import Channel
 
 
-def joystick_force_body_relative(
-        joystick: sensor_msgs.msg.Joy,
-        buttons: JoystickButtons,
-        axes: JoystickAxes) -> np.ndarray:
+def joystick_body(
+    joystick_message: sensor_msgs.msg.Joy,
+        axes: JoystickAxes) -> Tuple[np.ndarray, Channel]:
+    """
+    sends [surge, sway, yaw] commands relative to body regardless of the orientation wrt north
+    """
+    yaw_command = joystick_message.axes[axes.RIGHT_X]
+    surge_command = joystick_message.axes[axes.LEFT_Y]
+    sway_command = joystick_message.axes[axes.LEFT_X]
 
-    # Replace the following line
-    u0, u1, u2, a1, a2 = 0.0, 0.0, 0.0, 0.0, 0.0
+    tau = [surge_command, sway_command, yaw_command]
 
-    #
-    # Write your code below
-    #
-    u = np.array([[u0, u1, u2, a1, a2]], dtype=float).T
-    return u
-
+    return np.array(tau, dtype=float).T, Channel.joystick

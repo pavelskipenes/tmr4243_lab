@@ -95,7 +95,9 @@ class JoystickControl(rclpy.node.Node):
                 except ValueError as v:
                     self.get_logger().fatal(
                         f"Invalid input argument for task {v}")
-                    return
+                    raise Exception("unreachable")
+            case _:
+                raise Exception("unreachable")
 
     def joy_callback(self, msg: sensor_msgs.msg.Joy) -> None:
 

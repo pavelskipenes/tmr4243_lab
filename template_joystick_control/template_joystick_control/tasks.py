@@ -7,7 +7,8 @@ from template_joystick_control.task_basin import joystick_basin
 from template_joystick_control.task_body import joystick_body
 from template_joystick_control.task_simple import joystick_simple
 from template_joystick_control.topic import Topic
-from typing import Optional, Tuple
+from template_joystick_control.typing import Command, Actuation
+from typing import Optional, Tuple, Union
 import sensor_msgs.msg
 
 
@@ -41,10 +42,12 @@ def get_actuation_topic_new_task(
         axes: JoystickAxes,
         last_eta_msg: Float32MultiArray,
         task_default: Task
-) -> Tuple[Tuple[ArrayLike, Topic] | Error, Task]:
+) -> Tuple[Tuple[Union[Actuation, Command], Topic] | Error, Task]:
     """
-    returns the actuation and what topic it should be published on.
-    Can return `None` if the input arguments is not sufficient in producing an output.
+    returns the command (or actuation for the simple task) and the intended topic it should be published on.
+    Can return `Error` instead of the command (or actuation for the simple task).
+    If the output cannot be calculated given the input. Error value returned will contain details about 
+    why computation could not be performed.
     """
     task = get_new_requested_task(msg, buttons) or task_default
     match task:

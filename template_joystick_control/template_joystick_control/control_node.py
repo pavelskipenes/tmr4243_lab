@@ -26,6 +26,7 @@ from template_joystick_control.error import Error as JoystickError
 from template_joystick_control.mapping import JoystickAxes, JoystickButtons
 from template_joystick_control.tasks import Task, get_actuation_topic_new_task
 from template_joystick_control.topic import Topic
+from template_joystick_control.typing import Actuation, Command
 import numpy as np
 import rcl_interfaces.msg
 import rclpy

@@ -36,8 +36,6 @@ def get_new_requested_task(
         return Task.BODY
     if joystick_message.buttons[buttons.CIRCLE]:
         return Task.BASIN
-    if joystick_message.buttons[buttons.CROSS]:
-        return Task.EMULATED
     return None
 
 

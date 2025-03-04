@@ -43,7 +43,7 @@ class JoystickControl(rclpy.node.Node):
     def __init__(self) -> None:
         super().__init__('tmr4243_joystick_control_node')
 
-        self.task_default: Task = Task.SIMPLE
+        self.task_default: Task = Task.EMULATED
         self.task: Task = self.task_default
         self.pubs: dict[str, Publisher] = {}
         self.subs: dict[str, Subscription] = {}

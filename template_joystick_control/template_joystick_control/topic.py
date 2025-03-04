@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Channel(str, Enum):
+class Topic(str, Enum):
     """
     Joystick module can publish in three modes.
 

@@ -1,6 +1,6 @@
 from numpy.typing import ArrayLike
 from std_msgs.msg import Float32MultiArray
-from template_joystick_control.channel import Channel
+from template_joystick_control.topic import Topic
 from template_joystick_control.error import Error
 from template_joystick_control.mapping import JoystickAxes
 from typing import Tuple, Optional
@@ -26,7 +26,7 @@ def rotate(heading) -> np.matrix:
 def joystick_basin(
         joystick: sensor_msgs.msg.Joy,
         axes: JoystickAxes,
-        last_eta_msg: Optional[Float32MultiArray]) -> Tuple[ArrayLike, Channel] | Error:
+        last_eta_msg: Optional[Float32MultiArray]) -> Tuple[ArrayLike, Topic] | Error:
     """
     comamnded directions that are interpreted with respect to basin / pool.
     """
@@ -46,4 +46,4 @@ def joystick_basin(
     tau = rotate(
         heading) @ np.array([surge_command, sway_command, yaw_command], dtype=float).T
 
-    return np.array(tau, dtype=float).T, Channel.joystick
+    return np.array(tau, dtype=float).T, Topic.joystick

@@ -22,10 +22,10 @@
 
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
-from template_joystick_control.channel import Channel
+from template_joystick_control.topic import Topic
 from template_joystick_control.error import Error as JoystickError
 from template_joystick_control.mapping import JoystickAxes, JoystickButtons
-from template_joystick_control.tasks import Task, get_actuation_channel_new_task
+from template_joystick_control.tasks import Task, get_actuation_topic_new_task
 import numpy as np
 import rcl_interfaces.msg
 import rclpy
@@ -100,38 +100,37 @@ class JoystickControl(rclpy.node.Node):
 
     def joy_callback(self, msg: sensor_msgs.msg.Joy) -> None:
 
-        # TODO: rename channel to topic
-        actuation_channel_or_error_and_task = get_actuation_channel_new_task(
+        actuation_topic_or_error_and_task = get_actuation_topic_new_task(
             msg=msg,
             buttons=self.joystick_buttons,
             axes=self.joystick_axes,
             last_eta_msg=self.last_eta_msg,
             task_default=self.task)
 
-        actuation_channel_or_error, new_task = actuation_channel_or_error_and_task
+        actuation_topic_or_error, new_task = actuation_topic_or_error_and_task
         if new_task != self.task:
             self.get_logger().info(
                 f"[Joystick] Switching task to {new_task}")
             self.task = new_task
 
-        match actuation_channel_or_error:
+        match actuation_topic_or_error:
             case JoystickError.POSITION_INVALID_DIMENSION:
                 self.get_logger().fatal(
-                    f"[Joystick] {actuation_channel_or_error.value}")
-                raise Exception(actuation_channel_or_error)
+                    f"[Joystick] {actuation_topic_or_error.value}")
+                raise Exception(actuation_topic_or_error)
 
             case JoystickError.POSITION_MISSING:
                 self.get_logger().warn(
-                    f"[Joystick] {actuation_channel_or_error.value}")
+                    f"[Joystick] {actuation_topic_or_error.value}")
                 return
 
-            case actuation, channel:
+            case actuation, topic:
                 assert isinstance(actuation, np.ndarray)
-                assert isinstance(channel, Channel)
+                assert isinstance(topic, Topic)
                 cmd = std_msgs.msg.Float32MultiArray()
                 # TODO: check if flatten is needed. Underlying functions "should" not be creating nested arrays anyway
                 cmd.data = actuation.flatten().tolist()
-                self.pubs[channel].publish(cmd)
+                self.pubs[topic].publish(cmd)
 
             case _:
                 raise Exception("unreachable")

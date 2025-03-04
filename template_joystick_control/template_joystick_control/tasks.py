@@ -1,7 +1,7 @@
 from enum import Enum
 from numpy.typing import ArrayLike
 from std_msgs.msg import Float32MultiArray
-from template_joystick_control.channel import Channel
+from template_joystick_control.topic import Topic
 from template_joystick_control.error import Error
 from template_joystick_control.mapping import JoystickButtons, JoystickAxes
 from template_joystick_control.task_basin import joystick_basin
@@ -35,15 +35,15 @@ def get_new_requested_task(
     return None
 
 
-def get_actuation_channel_new_task(
+def get_actuation_topic_new_task(
         msg: sensor_msgs.msg.Joy,
         buttons: JoystickButtons,
         axes: JoystickAxes,
         last_eta_msg: Float32MultiArray,
         task_default: Task
-) -> Tuple[Tuple[ArrayLike, Channel] | Error, Task]:
+) -> Tuple[Tuple[ArrayLike, Topic] | Error, Task]:
     """
-    returns the actuation and what channel it should be published on.
+    returns the actuation and what topic it should be published on.
     Can return `None` if the input arguments is not sufficient in producing an output.
     """
     task = get_new_requested_task(msg, buttons) or task_default

@@ -16,8 +16,8 @@ def rotate(heading) -> np.matrix:
         return np.sin(angle)
     return np.matrix(
         [
-            [c(heading), -s(heading), 0.0],
-            [s(heading), c(heading), 0.0],
+            [c(heading), s(heading), 0.0],
+            [-s(heading), c(heading), 0.0],
             [0.0, 0.0, 1.0],
         ], dtype=np.float64
     )

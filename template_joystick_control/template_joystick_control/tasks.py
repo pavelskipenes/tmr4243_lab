@@ -1,12 +1,12 @@
 from enum import Enum
 from numpy.typing import ArrayLike
 from std_msgs.msg import Float32MultiArray
-from template_joystick_control.topic import Topic
 from template_joystick_control.error import Error
 from template_joystick_control.mapping import JoystickButtons, JoystickAxes
 from template_joystick_control.task_basin import joystick_basin
 from template_joystick_control.task_body import joystick_body
 from template_joystick_control.task_simple import joystick_simple
+from template_joystick_control.topic import Topic
 from typing import Optional, Tuple
 import sensor_msgs.msg
 

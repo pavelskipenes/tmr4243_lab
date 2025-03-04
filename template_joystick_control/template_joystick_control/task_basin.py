@@ -1,8 +1,8 @@
 from numpy.typing import ArrayLike
 from std_msgs.msg import Float32MultiArray
-from template_joystick_control.topic import Topic
 from template_joystick_control.error import Error
 from template_joystick_control.mapping import JoystickAxes
+from template_joystick_control.topic import Topic
 from typing import Tuple, Optional
 import numpy as np
 import sensor_msgs.msg

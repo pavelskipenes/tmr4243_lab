@@ -32,10 +32,6 @@ import std_msgs.msg
 import rclpy.node
 import rclpy
 import numpy as np
-from rich.traceback import install
-from rich.console import Console
-console = Console(color_system="truecolor")
-install(show_locals=True, console=console)
 
 
 class JoystickControl(rclpy.node.Node):

@@ -1,11 +1,8 @@
-import random
-
-import numpy as np
-
-from typing import Tuple
-
-from template_joystick_control.channel import Channel
 from numpy.typing import ArrayLike
+from template_joystick_control.channel import Channel
+from typing import Tuple
+import numpy as np
+import random
 
 
 class RandomWalk:

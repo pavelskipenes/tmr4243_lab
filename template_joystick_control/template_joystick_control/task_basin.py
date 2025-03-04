@@ -1,12 +1,11 @@
-import sensor_msgs.msg
-import numpy as np
-
-from typing import Tuple, Optional
-from std_msgs.msg import Float32MultiArray
-
-from template_joystick_control.channel import Channel
-from template_joystick_control.mapping import JoystickAxes
 from numpy.typing import ArrayLike
+from std_msgs.msg import Float32MultiArray
+from template_joystick_control.channel import Channel
+from template_joystick_control.error import Error
+from template_joystick_control.mapping import JoystickAxes
+from typing import Tuple, Optional
+import numpy as np
+import sensor_msgs.msg
 
 
 def rotate(heading) -> np.matrix:
@@ -27,15 +26,15 @@ def rotate(heading) -> np.matrix:
 def joystick_basin(
         joystick: sensor_msgs.msg.Joy,
         axes: JoystickAxes,
-        last_eta_msg: Optional[Float32MultiArray]) -> Optional[Tuple[ArrayLike, Channel]]:
+        last_eta_msg: Optional[Float32MultiArray]) -> Tuple[ArrayLike, Channel] | Error:
     """
     comamnded directions that are interpreted with respect to basin / pool.
     """
     if last_eta_msg is None:
-        return None
+        return Error.POSITION_MISSING
 
     if len(last_eta_msg.data) != 3:
-        return None
+        return Error.POSITION_INVALID_DIMENSION
 
     position = last_eta_msg.data
     heading = position[2]

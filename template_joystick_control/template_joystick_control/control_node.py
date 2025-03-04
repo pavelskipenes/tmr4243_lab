@@ -23,15 +23,16 @@
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from template_joystick_control.channel import Channel
+from template_joystick_control.error import Error
+from template_joystick_control.mapping import JoystickAxes, JoystickButtons
 from template_joystick_control.task_emulated import RandomWalk
 from template_joystick_control.tasks import Task, get_actuation_channel_new_task
-from template_joystick_control.mapping import JoystickAxes, JoystickButtons
+import numpy as np
 import rcl_interfaces.msg
+import rclpy
+import rclpy.node
 import sensor_msgs.msg
 import std_msgs.msg
-import rclpy.node
-import rclpy
-import numpy as np
 
 
 class JoystickControl(rclpy.node.Node):
@@ -102,7 +103,7 @@ class JoystickControl(rclpy.node.Node):
     def joy_callback(self, msg: sensor_msgs.msg.Joy) -> None:
 
         # TODO: rename channel to topic
-        actuation_channel_or_none_and_task = get_actuation_channel_new_task(
+        actuation_channel_or_error_and_task = get_actuation_channel_new_task(
             msg=msg,
             buttons=self.joystick_buttons,
             axes=self.joystick_axes,
@@ -110,15 +111,18 @@ class JoystickControl(rclpy.node.Node):
             last_eta_msg=self.last_eta_msg,
             task_default=self.task)
 
-        actuation_channel_or_none, new_task = actuation_channel_or_none_and_task
+        actuation_channel_or_error, new_task = actuation_channel_or_error_and_task
         if new_task != self.task:
             self.get_logger().info(f"[Joystick] Switching task to {new_task}")
             self.task = new_task
-        if actuation_channel_or_none is None:
-            self.get_logger().error("[Joystick] some fuckup happened")
+        if actuation_channel_or_error is Error:
+            why = actuation_channel_or_error
+            # What do we do with errors? We ignore them.
+            self.get_logger().warn(
+                f"[Joystick] {why}")
             return
 
-        actuation, channel = actuation_channel_or_none
+        actuation, channel = actuation_channel_or_error
         assert isinstance(actuation, np.ndarray)
         assert isinstance(channel, Channel)
 

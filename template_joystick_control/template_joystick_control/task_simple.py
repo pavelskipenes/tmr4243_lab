@@ -1,11 +1,9 @@
-import sensor_msgs.msg
-import numpy as np
-
-from typing import Tuple
 from numpy.typing import ArrayLike
-
-from template_joystick_control.mapping import JoystickAxes
 from template_joystick_control.channel import Channel
+from template_joystick_control.mapping import JoystickAxes
+from typing import Tuple
+import numpy as np
+import sensor_msgs.msg
 
 
 def joystick_simple(

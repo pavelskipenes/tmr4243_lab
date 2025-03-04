@@ -8,6 +8,7 @@ from std_msgs.msg import Float32MultiArray
 
 from template_joystick_control.channel import Channel
 from template_joystick_control.joystick_mapping import JoystickAxes
+from numpy.typing import ArrayLike
 
 
 def rotate(heading) -> np.matrix:
@@ -18,19 +19,19 @@ def rotate(heading) -> np.matrix:
         return np.sin(angle)
     return np.matrix(
         [
-            [c(heading), -s(heading), 0],
-            [s(heading), c(heading), 0],
-            [0, 0, 1],
-        ]
+            [c(heading), -s(heading), 0.0],
+            [s(heading), c(heading), 0.0],
+            [0.0, 0.0, 1.0],
+        ], dtype=np.float64
     )
 
 
 def joystick_basin(
         joystick: sensor_msgs.msg.Joy,
         axes: JoystickAxes,
-        last_eta_msg: Optional[Float32MultiArray]) -> Optional[Tuple[np.ndarray, Channel]]:
+        last_eta_msg: Optional[Float32MultiArray]) -> Optional[Tuple[ArrayLike, Channel]]:
     """
-    thruster commands are rotates with respect to the pool / basin regardless of the orientation of the vessel.
+    comamnded directions that are interpreted with respect to basin / pool.
     """
     if last_eta_msg is None:
         return None
@@ -45,6 +46,7 @@ def joystick_basin(
     surge_command = joystick.axes[axes.LEFT_Y]
     sway_command = joystick.axes[axes.LEFT_X]
 
-    tau = rotate(heading) @ [surge_command, sway_command, yaw_command]
+    tau = rotate(
+        heading) @ np.array([surge_command, sway_command, yaw_command], dtype=float).T
 
     return np.array(tau, dtype=float).T, Channel.joystick

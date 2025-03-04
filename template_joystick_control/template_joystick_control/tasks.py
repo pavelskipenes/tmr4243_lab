@@ -1,17 +1,17 @@
-import numpy as np
 import sensor_msgs.msg
 
-from typing import Optional
+from typing import Optional, Tuple
 from enum import Enum
 
-from channel import Channel
 from std_msgs.msg import Float32MultiArray
 
+from template_joystick_control.channel import Channel
 from template_joystick_control.joystick_emulated import RandomWalk, joystick_emulator
 from template_joystick_control.joystick_mapping import JoystickButtons, JoystickAxes
 from template_joystick_control.joystick_simple import joystick_simple
 from template_joystick_control.joystick_force_basin_relative import joystick_basin
 from template_joystick_control.joystick_force_body_relative import joystick_body
+from numpy.typing import ArrayLike
 
 
 class Task(str, Enum):
@@ -21,11 +21,6 @@ class Task(str, Enum):
     EMULATED = "emulated"
 
 
-# used by dynamic parameters in control node.
-# TASKS = [Task.SIMPLE, Task.BODY, Task.BASIN]
-# possible dynamic alternative:
-# list(Task.__members__)
-
 def get_new_requested_task(
         joystick_message: sensor_msgs.msg.Joy,
         buttons: JoystickButtons) -> Optional[Task]:
@@ -34,10 +29,6 @@ def get_new_requested_task(
     Otherwise `None` is returned.
     """
 
-    print(buttons.__slots__)
-    print(type(buttons))
-    assert buttons.TRIANGLE is not None
-    assert isinstance(buttons, JoystickButtons)
     # Note: The buttons generally needs debouncing. Not needed here.
     if joystick_message.buttons[buttons.TRIANGLE]:
         return Task.SIMPLE
@@ -45,29 +36,32 @@ def get_new_requested_task(
         return Task.BODY
     if joystick_message.buttons[buttons.CIRCLE]:
         return Task.BASIN
+    if joystick_message.buttons[buttons.CROSS]:
+        return Task.EMULATED
     return None
 
 
-def get_actuation_and_channel(
+def get_actuation_channel_new_task(
         msg: sensor_msgs.msg.Joy,
         buttons: JoystickButtons,
         axes: JoystickAxes,
         random_walk: RandomWalk,
         last_eta_msg: Float32MultiArray,
         task_default: Task
-) -> Optional[tuple[np.ndarray, Channel]]:
+) -> Tuple[Optional[Tuple[ArrayLike, Channel]], Task]:
     """
     returns the actuation and what channel it should be published on.
     Can return `None` if the input arguments is not sufficient in producing an output.
     """
-    match get_new_requested_task(msg, buttons) or task_default:
+    task = get_new_requested_task(msg, buttons) or task_default
+    match task:
         case Task.SIMPLE:
-            return joystick_simple(msg, axes)
+            return joystick_simple(msg, axes), task
         case Task.BODY:
-            return joystick_body(msg, axes)
+            return joystick_body(msg, axes), task
         case Task.BASIN:
-            return joystick_basin(msg, axes, last_eta_msg)
+            return joystick_basin(msg, axes, last_eta_msg), task
         case Task.EMULATED:
-            return joystick_emulator(random_walk)
+            return joystick_emulator(random_walk), task
         case _:
             raise Exception("unreachable")

@@ -20,33 +20,37 @@
 # Year: 2024
 # Copyright (C) 2024 NTNU Marine Cybernetics Laboratory
 
-import numpy as np
-
-import rclpy
-import rclpy.node
-import std_msgs.msg
-import sensor_msgs.msg
-# import rcl_interfaces.msg
-
-from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
-from template_joystick_control.tasks import Task, get_actuation_and_channel
-from template_joystick_control.joystick_emulated import RandomWalk
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 from template_joystick_control.channel import Channel
+from template_joystick_control.joystick_emulated import RandomWalk
+from template_joystick_control.tasks import Task, get_actuation_channel_new_task
+from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
+import rcl_interfaces.msg
+import sensor_msgs.msg
+import std_msgs.msg
+import rclpy.node
+import rclpy
+import numpy as np
+from numpy.typing import ArrayLike
+from rich.traceback import install
+from rich.console import Console
+console = Console(color_system="truecolor")
+install(show_locals=True, console=console)
 
 
 class JoystickControl(rclpy.node.Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('tmr4243_joystick_control_node')
 
-        self.task_default = Task.SIMPLE
-        self.task_last = None
-        self.task = None
-        self.pubs = {}
-        self.subs = {}
-        self.random_walk = RandomWalk()
-        self.last_eta_msg = std_msgs.msg.Float32MultiArray()
-        self.joystick_axes = JoystickAxes()
-        self.joystick_buttons = JoystickButtons()
+        self.task_default: Task = Task.SIMPLE
+        self.task: Task = self.task_default
+        self.pubs: dict[str, Publisher] = {}
+        self.subs: dict[str, Subscription] = {}
+        self.random_walk: RandomWalk = RandomWalk()
+        self.last_eta_msg: std_msgs.msg.Float32MultiArray = std_msgs.msg.Float32MultiArray()
+        self.joystick_axes: JoystickAxes = JoystickAxes()
+        self.joystick_buttons: JoystickButtons = JoystickButtons()
 
         # Topics
         self.subs["joy"] = self.create_subscription(
@@ -62,54 +66,75 @@ class JoystickControl(rclpy.node.Node):
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/u', 10)
 
         # dynamic parameters
-        # joystick_axes = JoystickAxes.get_names()
-        # joystick_buttons = JoystickButtons.get_names()
-        #
-        # for param in joystick_buttons + joystick_axes:
-        #     self.declare_parameter(param, 0)
-        #
-        # for param in joystick_buttons:
-        #     setattr(self.joystick_buttons, param,
-        #             self.get_parameter(param).value)
-        #
-        # for param in joystick_axes:
-        #     setattr(self.joystick_axes, param,
-        #             self.get_parameter(param).value)
-        # self.declare_parameter(
-        #     'task',
-        #     self.task,
-        #     rcl_interfaces.msg.ParameterDescriptor(
-        #         description="Task",
-        #         type=rcl_interfaces.msg.ParameterType.PARAMETER_STRING,
-        #         read_only=False,
-        #         additional_constraints=f"Allowed values: {' '.join(TASKS)}"
-        #     )
-        # )
+        joystick_axes = JoystickAxes.get_names()
+        joystick_buttons = JoystickButtons.get_names()
+
+        for param in joystick_buttons + joystick_axes:
+            self.declare_parameter(param, 0)
+
+        for param in joystick_buttons:
+            setattr(self.joystick_buttons, param,
+                    self.get_parameter(param).value)
+
+        for param in joystick_axes:
+            setattr(self.joystick_axes, param,
+                    self.get_parameter(param).value)
+        self.declare_parameter(
+            'task',
+            self.task,
+            rcl_interfaces.msg.ParameterDescriptor(
+                description="Task",
+                type=rcl_interfaces.msg.ParameterType.PARAMETER_STRING,
+                read_only=False,
+                additional_constraints=f"Allowed values: {' '.join(list(Task._member_names_))}"
+            )
+        )
 
         # self.timer = self.create_timer(0.1, self.timer_callback)
 
-    # def timer_callback(self):
-        # self.task = self.get_parameter(
+    def timer_callback(self) -> None:
+        # This shit is setting the task to simple overwriting my other shit
+        # for some reason something somewhere is spamming the task to be 'simple'
+        pass
+        # maybe_new_task_name = self.get_parameter(
         #     'task').get_parameter_value().string_value
+        # match maybe_new_task_name:
+        #     case str():
+        #         try:
+        #             self.get_logger().info(
+        #                 f"[Joystick] crazy shit is being set: {maybe_new_task_name}")
+        #             self.task = Task(maybe_new_task_name)
+        #         except ValueError:
+        #             self.get_logger().error(
+        #                 f"[Joystick] Can not construct task name from {maybe_new_task_name} because it's not in {list(Task._member_names_)}. Request Ignored")
+        #     case not_a_string:
+        #         self.get_logger().error(
+        #             f"[Joystick] received an unknown variable {not_a_string}")
+        #         raise ValueError(not_a_string)
         #
-        # self.get_logger().debug(
-        #     f"Parameter task: {self.task}", throttle_duration_sec=1.0)
+        # self.get_logger().info(
+        #     f"[Joystick] Parameter task: {self.task}", throttle_duration_sec=1.0)
 
-    def joy_callback(self, msg: sensor_msgs.msg.Joy):
+    def joy_callback(self, msg: sensor_msgs.msg.Joy) -> None:
 
         # TODO: rename channel to topic
-        actuation_and_channel_or_none = get_actuation_and_channel(
+        actuation_channel_or_none_and_task = get_actuation_channel_new_task(
             msg=msg,
             buttons=self.joystick_buttons,
             axes=self.joystick_axes,
             random_walk=self.random_walk,
             last_eta_msg=self.last_eta_msg,
-            task_default=self.task_last or self.task_default)
-        if actuation_and_channel_or_none is None:
-            # None is returned whenver the input is fucked
+            task_default=self.task)
+
+        actuation_channel_or_none, new_task = actuation_channel_or_none_and_task
+        if new_task != self.task:
+            self.get_logger().info(f"[Joystick] Switching task to {new_task}")
+            self.task = new_task
+        if actuation_channel_or_none is None:
+            self.get_logger().error("[Joystick] some fuckup happened")
             return
 
-        actuation, channel = actuation_and_channel_or_none
+        actuation, channel = actuation_channel_or_none
         assert isinstance(actuation, np.ndarray)
         assert isinstance(channel, Channel)
 
@@ -118,11 +143,11 @@ class JoystickControl(rclpy.node.Node):
         cmd.data = actuation.flatten().tolist()
         self.pubs[channel].publish(cmd)
 
-    def eta_callback(self, msg):
+    def eta_callback(self, msg) -> None:
         self.last_eta_msg = msg
 
 
-def main(args=None):
+def main(args=None) -> None:
     rclpy.init(args=args)
 
     rclpy.spin(JoystickControl())

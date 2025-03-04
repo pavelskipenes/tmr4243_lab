@@ -3,19 +3,20 @@ from dataclasses import dataclass
 # docs is not correct for playstaion 4 controller and the indexies had to be figured out manually.
 
 
+# TOOD: check if frozen=True can be used
 @dataclass(slots=True, init=False)
 class JoystickButtons:
-    CROSS: int
-    CIRCLE: int
-    TRIANGLE: int
-    SQUARE: int
-    SHOULDER_LEFT: int
-    SHOULDER_RIGHT: int
-    SHARE: int
-    OPTIONS: int
-    GUIDE: int
-    STICK_LEFT: int
-    STICK_RIGHT: int
+    CROSS: int = 0
+    CIRCLE: int = 1
+    TRIANGLE: int = 2
+    SQUARE: int = 3
+    SHOULDER_LEFT: int = 4
+    SHOULDER_RIGHT: int = 5
+    SHARE: int = 8
+    OPTIONS: int = 9
+    GUIDE: int = 10
+    STICK_LEFT: int = 11
+    STICK_RIGHT: int = 12
 
     @classmethod
     def get_names(cls):

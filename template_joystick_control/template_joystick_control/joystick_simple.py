@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
-import channel
 import sensor_msgs.msg
 import numpy as np
 
+from typing import Tuple
+from numpy.typing import ArrayLike
+
 from template_joystick_control.joystick_mapping import JoystickAxes
+from template_joystick_control.channel import Channel
 
 
 def joystick_simple(
         joystick_message: sensor_msgs.msg.Joy,
-        axes: JoystickAxes) -> tuple[np.ndarray, channel.Channel]:
+        axes: JoystickAxes) -> Tuple[ArrayLike, Channel]:
     """
     simple joystick controller sends raw actuation values for thrusters
     Thrust allocation are bypassed.
@@ -37,4 +40,4 @@ def joystick_simple(
         azimuth_port_angle,
     ]
 
-    return np.array(actuation, dtype=float).T, channel.Channel.actuation
+    return np.array(actuation, dtype=float).T, Channel.actuation

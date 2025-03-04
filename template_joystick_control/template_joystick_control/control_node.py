@@ -85,30 +85,17 @@ class JoystickControl(rclpy.node.Node):
             )
         )
 
-        # self.timer = self.create_timer(0.1, self.timer_callback)
-
-    def timer_callback(self) -> None:
-        # This shit is setting the task to simple overwriting my other shit
-        # for some reason something somewhere is spamming the task to be 'simple'
-        pass
-        # maybe_new_task_name = self.get_parameter(
-        #     'task').get_parameter_value().string_value
-        # match maybe_new_task_name:
-        #     case str():
-        #         try:
-        #             self.get_logger().info(
-        #                 f"[Joystick] crazy shit is being set: {maybe_new_task_name}")
-        #             self.task = Task(maybe_new_task_name)
-        #         except ValueError:
-        #             self.get_logger().error(
-        #                 f"[Joystick] Can not construct task name from {maybe_new_task_name} because it's not in {list(Task._member_names_)}. Request Ignored")
-        #     case not_a_string:
-        #         self.get_logger().error(
-        #             f"[Joystick] received an unknown variable {not_a_string}")
-        #         raise ValueError(not_a_string)
-        #
-        # self.get_logger().info(
-        #     f"[Joystick] Parameter task: {self.task}", throttle_duration_sec=1.0)
+        task_value = self.get_parameter('task').value
+        match task_value:
+            case "":
+                return
+            case str():
+                try:
+                    self.task = Task(task_value)
+                except ValueError as v:
+                    self.get_logger().fatal(
+                        f"Invalid input argument for task {v}")
+                    return
 
     def joy_callback(self, msg: sensor_msgs.msg.Joy) -> None:
 

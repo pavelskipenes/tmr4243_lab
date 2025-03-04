@@ -4,12 +4,11 @@ from template_joystick_control.topic import Topic
 from typing import Tuple, Literal
 import numpy as np
 import sensor_msgs.msg
-from template_joystick_control.typing import Actuation
 
 
 def joystick_simple(
         joystick_message: sensor_msgs.msg.Joy,
-        axes: JoystickAxes) -> Tuple[Actuation, Literal[Topic.actuation]]:
+        axes: JoystickAxes) -> Tuple[ArrayLike, Literal[Topic.actuation]]:
     """
     returns Actuation and Topic.actuation where the message is intended to be sent to
 

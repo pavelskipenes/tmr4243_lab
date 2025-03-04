@@ -1,14 +1,11 @@
 from enum import Enum
 from numpy.typing import ArrayLike
-from std_msgs.msg import Float32MultiArray
-from template_joystick_control.error import Error
 from template_joystick_control.mapping import JoystickButtons, JoystickAxes
 from template_joystick_control.task_basin import joystick_basin
 from template_joystick_control.task_body import joystick_body
 from template_joystick_control.task_simple import joystick_simple
 from template_joystick_control.topic import Topic
-from template_joystick_control.typing import Command, Actuation
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 import sensor_msgs.msg
 
 
@@ -40,14 +37,12 @@ def get_actuation_topic_new_task(
         msg: sensor_msgs.msg.Joy,
         buttons: JoystickButtons,
         axes: JoystickAxes,
-        last_eta_msg: Float32MultiArray,
+        heading: float,
         task_default: Task
-) -> Tuple[Tuple[Union[Actuation, Command], Topic] | Error, Task]:
+) -> Tuple[Tuple[ArrayLike, Topic], Task]:
     """
     returns the command (or actuation for the simple task) and the intended topic it should be published on.
-    Can return `Error` instead of the command (or actuation for the simple task).
-    If the output cannot be calculated given the input. Error value returned will contain details about 
-    why computation could not be performed.
+    This function will never return any error. but trash is = trash out.
     """
     task = get_new_requested_task(msg, buttons) or task_default
     match task:
@@ -56,6 +51,6 @@ def get_actuation_topic_new_task(
         case Task.BODY:
             return joystick_body(msg, axes), task
         case Task.BASIN:
-            return joystick_basin(msg, axes, last_eta_msg), task
+            return joystick_basin(msg, axes, heading), task
         case _:
             raise Exception("unreachable")

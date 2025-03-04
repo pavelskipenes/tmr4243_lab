@@ -23,7 +23,7 @@
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from template_joystick_control.channel import Channel
-from template_joystick_control.error import Error
+from template_joystick_control.error import Error as JoystickError
 from template_joystick_control.mapping import JoystickAxes, JoystickButtons
 from template_joystick_control.task_emulated import RandomWalk
 from template_joystick_control.tasks import Task, get_actuation_channel_new_task
@@ -113,23 +113,31 @@ class JoystickControl(rclpy.node.Node):
 
         actuation_channel_or_error, new_task = actuation_channel_or_error_and_task
         if new_task != self.task:
-            self.get_logger().info(f"[Joystick] Switching task to {new_task}")
+            self.get_logger().info(
+                f"[Joystick] Switching task to {new_task}")
             self.task = new_task
-        if actuation_channel_or_error is Error:
-            why = actuation_channel_or_error
-            # What do we do with errors? We ignore them.
-            self.get_logger().warn(
-                f"[Joystick] {why}")
-            return
 
-        actuation, channel = actuation_channel_or_error
-        assert isinstance(actuation, np.ndarray)
-        assert isinstance(channel, Channel)
+        match actuation_channel_or_error:
+            case JoystickError.POSITION_INVALID_DIMENSION:
+                self.get_logger().fatal(
+                    f"[Joystick] {actuation_channel_or_error.value}")
+                raise Exception(actuation_channel_or_error)
 
-        cmd = std_msgs.msg.Float32MultiArray()
-        # TODO: check if flatten is needed. Underlying functions "should" not be creating nested arrays anyway
-        cmd.data = actuation.flatten().tolist()
-        self.pubs[channel].publish(cmd)
+            case JoystickError.POSITION_MISSING:
+                self.get_logger().warn(
+                    f"[Joystick] {actuation_channel_or_error.value}")
+                return
+
+            case actuation, channel:
+                assert isinstance(actuation, np.ndarray)
+                assert isinstance(channel, Channel)
+                cmd = std_msgs.msg.Float32MultiArray()
+                # TODO: check if flatten is needed. Underlying functions "should" not be creating nested arrays anyway
+                cmd.data = actuation.flatten().tolist()
+                self.pubs[channel].publish(cmd)
+
+            case _:
+                raise Exception("unreachable")
 
     def eta_callback(self, msg) -> None:
         self.last_eta_msg = msg

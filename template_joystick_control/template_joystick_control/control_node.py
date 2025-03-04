@@ -128,7 +128,6 @@ class JoystickControl(rclpy.node.Node):
                 assert isinstance(actuation, np.ndarray)
                 assert isinstance(topic, Topic)
                 cmd = std_msgs.msg.Float32MultiArray()
-                # TODO: check if flatten is needed. Underlying functions "should" not be creating nested arrays anyway
                 cmd.data = actuation.flatten().tolist()
                 self.pubs[topic].publish(cmd)
 

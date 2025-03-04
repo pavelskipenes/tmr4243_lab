@@ -1,14 +1,14 @@
 from numpy.typing import ArrayLike
 from template_joystick_control.mapping import JoystickAxes
 from template_joystick_control.topic import Topic
-from typing import Tuple
+from typing import Tuple, Literal
 import numpy as np
 import sensor_msgs.msg
 
 
 def joystick_simple(
         joystick_message: sensor_msgs.msg.Joy,
-        axes: JoystickAxes) -> Tuple[ArrayLike, Topic]:
+        axes: JoystickAxes) -> Tuple[ArrayLike, Literal[Topic.actuation]]:
     """
     simple joystick controller sends raw actuation values for thrusters
     Thrust allocation are bypassed.

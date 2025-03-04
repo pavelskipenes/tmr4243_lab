@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sensor_msgs.msg
 import numpy as np
 

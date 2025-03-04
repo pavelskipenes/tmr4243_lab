@@ -25,7 +25,6 @@ from rclpy.subscription import Subscription
 from template_joystick_control.channel import Channel
 from template_joystick_control.error import Error as JoystickError
 from template_joystick_control.mapping import JoystickAxes, JoystickButtons
-from template_joystick_control.task_emulated import RandomWalk
 from template_joystick_control.tasks import Task, get_actuation_channel_new_task
 import numpy as np
 import rcl_interfaces.msg
@@ -39,11 +38,10 @@ class JoystickControl(rclpy.node.Node):
     def __init__(self) -> None:
         super().__init__('tmr4243_joystick_control_node')
 
-        self.task_default: Task = Task.EMULATED
+        self.task_default: Task = Task.SIMPLE
         self.task: Task = self.task_default
         self.pubs: dict[str, Publisher] = {}
         self.subs: dict[str, Subscription] = {}
-        self.random_walk: RandomWalk = RandomWalk()
         self.last_eta_msg: std_msgs.msg.Float32MultiArray = std_msgs.msg.Float32MultiArray()
         self.joystick_axes: JoystickAxes = JoystickAxes()
         self.joystick_buttons: JoystickButtons = JoystickButtons()
@@ -88,7 +86,7 @@ class JoystickControl(rclpy.node.Node):
 
         task_value = self.get_parameter('task').value
         match task_value:
-            case "":
+            case "" | None:
                 return
             case str():
                 try:
@@ -107,7 +105,6 @@ class JoystickControl(rclpy.node.Node):
             msg=msg,
             buttons=self.joystick_buttons,
             axes=self.joystick_axes,
-            random_walk=self.random_walk,
             last_eta_msg=self.last_eta_msg,
             task_default=self.task)
 

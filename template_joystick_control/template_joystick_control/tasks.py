@@ -6,7 +6,6 @@ from template_joystick_control.error import Error
 from template_joystick_control.mapping import JoystickButtons, JoystickAxes
 from template_joystick_control.task_basin import joystick_basin
 from template_joystick_control.task_body import joystick_body
-from template_joystick_control.task_emulated import RandomWalk, joystick_emulator
 from template_joystick_control.task_simple import joystick_simple
 from typing import Optional, Tuple
 import sensor_msgs.msg
@@ -16,7 +15,6 @@ class Task(str, Enum):
     SIMPLE = "simple",  # direct thruster actuation
     BODY = "body",  # relative to the vessel
     BASIN = "basin",  # relative to the virtual north
-    EMULATED = "emulated"
 
 
 def get_new_requested_task(
@@ -41,7 +39,6 @@ def get_actuation_channel_new_task(
         msg: sensor_msgs.msg.Joy,
         buttons: JoystickButtons,
         axes: JoystickAxes,
-        random_walk: RandomWalk,
         last_eta_msg: Float32MultiArray,
         task_default: Task
 ) -> Tuple[Tuple[ArrayLike, Channel] | Error, Task]:
@@ -57,7 +54,5 @@ def get_actuation_channel_new_task(
             return joystick_body(msg, axes), task
         case Task.BASIN:
             return joystick_basin(msg, axes, last_eta_msg), task
-        case Task.EMULATED:
-            return joystick_emulator(random_walk), task
         case _:
             raise Exception("unreachable")

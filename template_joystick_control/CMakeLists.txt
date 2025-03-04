@@ -24,7 +24,7 @@ install(
 
 install(
   PROGRAMS
-    ${PROJECT_NAME}/joystick_control_node.py
+    ${PROJECT_NAME}/control_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

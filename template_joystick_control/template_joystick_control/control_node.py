@@ -23,16 +23,15 @@
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from template_joystick_control.channel import Channel
-from template_joystick_control.joystick_emulated import RandomWalk
+from template_joystick_control.task_emulated import RandomWalk
 from template_joystick_control.tasks import Task, get_actuation_channel_new_task
-from template_joystick_control.joystick_mapping import JoystickAxes, JoystickButtons
+from template_joystick_control.mapping import JoystickAxes, JoystickButtons
 import rcl_interfaces.msg
 import sensor_msgs.msg
 import std_msgs.msg
 import rclpy.node
 import rclpy
 import numpy as np
-from numpy.typing import ArrayLike
 from rich.traceback import install
 from rich.console import Console
 console = Console(color_system="truecolor")

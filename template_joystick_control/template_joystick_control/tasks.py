@@ -6,11 +6,11 @@ from enum import Enum
 from std_msgs.msg import Float32MultiArray
 
 from template_joystick_control.channel import Channel
-from template_joystick_control.joystick_emulated import RandomWalk, joystick_emulator
-from template_joystick_control.joystick_mapping import JoystickButtons, JoystickAxes
-from template_joystick_control.joystick_simple import joystick_simple
-from template_joystick_control.joystick_force_basin_relative import joystick_basin
-from template_joystick_control.joystick_force_body_relative import joystick_body
+from template_joystick_control.task_emulated import RandomWalk, joystick_emulator
+from template_joystick_control.mapping import JoystickButtons, JoystickAxes
+from template_joystick_control.task_simple import joystick_simple
+from template_joystick_control.task_basin import joystick_basin
+from template_joystick_control.task_body import joystick_body
 from numpy.typing import ArrayLike
 
 

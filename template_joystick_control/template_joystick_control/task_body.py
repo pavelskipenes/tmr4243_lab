@@ -5,7 +5,7 @@ import numpy as np
 
 from typing import Tuple
 
-from template_joystick_control.joystick_mapping import JoystickAxes
+from template_joystick_control.mapping import JoystickAxes
 from template_joystick_control.channel import Channel
 
 from numpy.typing import ArrayLike

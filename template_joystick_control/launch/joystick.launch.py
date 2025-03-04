@@ -26,7 +26,7 @@ def generate_launch_description():
 
     node_joystick_control = launch_ros.actions.Node(
         package='template_joystick_control',
-        executable='joystick_control_node.py',
+        executable='control_node.py',
         name=f'{anon()}joystick_control',
         parameters=[
             {'task': launch.substitutions.LaunchConfiguration('task')},

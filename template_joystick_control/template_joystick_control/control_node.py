@@ -119,11 +119,11 @@ class JoystickControl(rclpy.node.Node):
     def eta_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
         input = msg.data[2]
         match input:
-            case float() if input > 2 * np.pi:
-                raise AssertionError("heading is larger than 2π")
+            case float() if input > np.pi:
+                raise AssertionError("heading too large")
 
-            case float() if input < 0:
-                raise AssertionError("heading is negative")
+            case float() if input < - np.pi:
+                raise AssertionError("heading is too low")
 
             case float() if len(msg.data) == 3:
                 self.heading = input

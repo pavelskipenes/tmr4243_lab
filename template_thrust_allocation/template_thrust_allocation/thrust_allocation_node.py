@@ -22,44 +22,46 @@
 
 import rclpy
 import rclpy.node
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 import std_msgs.msg
 import numpy as np
 
-from template_thrust_allocation.thrust_allocation_class import ThrustAllocator, ThrusterPositions
+from template_thrust_allocation.thrust_allocation_class import ThrustAllocator
+from template_thrust_allocation.thruster_positions import ThrusterPositions
 
 
 class ThrustAllocation(rclpy.node.Node):
-    def __init__(self):
-        super().__init__("tmr4243_thrust_allocation_node")      # Super calls for parent class properties
+    def __init__(self) -> None:
+        super().__init__("tmr4243_thrust_allocation_node")
 
-        self.thruster_positions = ThrusterPositions()
-        self.thrust_allocator = ThrustAllocator(self.thruster_positions)
+        self.thrust_allocator: ThrustAllocator = ThrustAllocator(
+            ThrusterPositions())
 
-        self.pubs = {}
-        self.subs = {}
+        self.pubs: dict[str, Publisher] = {}
+        self.subs: dict[str, Subscription] = {}
 
         self.subs["tau_cmd"] = self.create_subscription(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/tau', self.tau_cmd_callback, 1)
 
         self.pubs["u_cmd"] = self.create_publisher(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/u', 1)
-        
-    def tau_cmd_callback(self, msg):    # Handling of incoming command data, i.e. paste to numpy array
+
+    def tau_cmd_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
         tau = np.array([msg.data], dtype=float).flatten()
         u_cmd = std_msgs.msg.Float32MultiArray()
         u = self.thrust_allocator.allocate_extended(tau).tolist()
-        #u_cmd.data = thruster_allocation(self.tau).flatten().tobytes()  # Convert numpy array to list
-        u_cmd.data = u  # Convert numpy array to list
+        u_cmd.data = u
         self.pubs["u_cmd"].publish(u_cmd)
 
-def main(args=None):
-    # Initialize the node
-    rclpy.init(args=args)   # Initialize communication between node and ROS2
+
+def main(args=None) -> None:
+    rclpy.init(args=args)
 
     node = ThrustAllocation()
 
-    rclpy.spin(node)    # Starting the node, Loops
-    rclpy.shutdown()    # When node dies, shutoff communication to ROS2
+    rclpy.spin(node)
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':

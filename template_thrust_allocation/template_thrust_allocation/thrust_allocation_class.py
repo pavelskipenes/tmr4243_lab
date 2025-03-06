@@ -42,5 +42,11 @@ class ThrustAllocator():
         """Optimal forces F*"""
         F_star = self.B_pseudo @ tau_cmd + (np.eye(5) - self.B_pseudo @ self.B_extended) @ self.Fd
         u_star = np.linalg.inv(self.K) @ F_star
-        self.Fd = u_star
-        return u_star
+        u0 = u_star[0]
+        u1 = np.sqrt(u_star[1]**2+u_star[2]**2)
+        u2 = np.sqrt(u_star[3]**2+u_star[4]**2)
+        alpha1 = np.arctan2(u_star[2], u_star[1])
+        alpha2 = np.arctan2(u_star[4], u_star[3])
+        u_cmd = np.array([u0, u1, u2, alpha1, alpha2])
+
+        return u_cmd

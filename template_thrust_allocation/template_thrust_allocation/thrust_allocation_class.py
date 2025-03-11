@@ -78,10 +78,10 @@ class ThrustAllocator():
         self._weights = np.diag(
             [
                 1.0,  # Tunnel
-                1.0,  # Azimuth 0 magnitude
-                1.0,  # Azimuth 1 Magnitude
-                1.0,  # Azimuth 0 Angle
-                1.0,  # Azimuth 1 Angle
+                1.0,  # Azimuth 0 x
+                1.0,  # Azimuth 0 y
+                1.0,  # Azimuth 1 x
+                1.0,  # Azimuth 1 y
             ])
 
         """

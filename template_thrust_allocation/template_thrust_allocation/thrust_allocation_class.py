@@ -53,9 +53,9 @@ class ThrustAllocator():
 
         Tuning:
             Define bias forces and angles in thrust optimization.
-            These values will be used as a basis for optimization problem.
+            These values will be used iteratevely as a basis for optimization problem.
         """
-        self._force_desired = np.array(
+        self._force_desired: NDArray = np.array(
             [
                 0.0,  # Tunnel
                 0.0,  # Azimuth 0 magnitude
@@ -84,32 +84,7 @@ class ThrustAllocator():
                 1.0,  # Azimuth 1 y
             ])
 
-        """
-        Desired force bias, 5x1 matrix.
-
-        These terms are constant so it makes sence to cache them instead of calculating them each iteration.
-        """
-        self._force_bias = (
-            (
-                np.eye(5) -
-                self.weighted_pseudoinverse @
-                self.extended_thrust_conf
-            ) @
-            self.desired_force
-        )
-
-    @property
-    def desired_force(self) -> NDArray:
-        """
-        Get desired force magnitude.
-
-        Math notation:
-            F_d
-
-        Output:
-            5x1 matrix.
-        """
-        return self._force_desired
+        self._force_bias_last = np.array([0, 0, 0, 0, 0]).T
 
     @property
     def gain(self) -> NDArray:
@@ -192,9 +167,23 @@ class ThrustAllocator():
             )
         )
 
-    @property
     def force_bias(self) -> NDArray:
-        return self._force_bias
+        """
+        Calculate the bias force.
+
+        Side effect:
+            stores calculated value for next iteration of this call
+
+        Output:
+            5x1 column vector
+        """
+        current_force_bias = (
+            np.eye(5) -
+            self.weighted_pseudoinverse @
+            self.extended_thrust_conf
+        ) @ desired_force
+        self._force_bias_last = current_force_bias
+        return current_force_bias
 
     def allocate_extended(self, tau_cmd: NDArray) -> NDArray:
         """
@@ -214,7 +203,7 @@ class ThrustAllocator():
                 azimuth_1_angle in range [-pi, pi],
             ]
         """
-        force_optimal = self.weighted_pseudoinverse @ tau_cmd + self.force_bias
+        force_optimal = self.weighted_pseudoinverse @ tau_cmd + self.force_bias()
         actuation_optimal = self.gain_inv @ force_optimal
 
         return np.array(

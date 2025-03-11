@@ -25,11 +25,27 @@ import rclpy.node
 import numpy as np
 import rcl_interfaces.msg
 
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 import std_msgs.msg
 import tmr4243_interfaces.msg
 
 from template_observer.luenberger import luenberger
-from template_observer.wrap import wrap
+
+
+class Raft():
+    mass = np.matrix(
+        [
+            [16, 0, 0],
+            [0, 24, 0.53],
+            [0, 0.53, 2.8],
+        ], dtype=np.float64)
+    damping = np.matrix(
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ], dtype=np.float64)
 
 
 class Observer(rclpy.node.Node):
@@ -40,8 +56,8 @@ class Observer(rclpy.node.Node):
     def __init__(self):
         super().__init__('cse_observer')
 
-        self.subs = {}
-        self.pubs = {}
+        self.subs: dict[str, Subscription] = {}
+        self.pubs: dict[str, Publisher] = {}
 
         self.subs["tau"] = self.create_subscription(
             std_msgs.msg.Float32MultiArray, '/tmr4243/state/tau', self.tau_callback, 10
@@ -64,66 +80,24 @@ class Observer(rclpy.node.Node):
                 additional_constraints=f"Allowed values: {' '.join(Observer.TASK_LIST)}"
             )
         )
-        self.task = self.get_parameter('task').get_parameter_value().string_value
 
-        self.L1_value = [1.0] * 3
-        self.declare_parameter(
-            'L1',
-            self.L1_value,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="L1 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
-
-        self.L2_value = [1.0] * 3
-        self.declare_parameter(
-            'L2',
-            self.L2_value,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="L2 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
-
-        self.L3_value = [1.0] * 3
-        self.declare_parameter(
-            'L3',
-            self.L3_value,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="L3 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
-
-        self.L1_value = self.get_parameter('L1').get_parameter_value().double_array_value
-        self.L2_value = self.get_parameter('L2').get_parameter_value().double_array_value
-        self.L3_value = self.get_parameter('L3').get_parameter_value().double_array_value
+        self.task = self.get_parameter(
+            'task').get_parameter_value().string_value
 
         self.get_logger().info(f"Task: {self.task}")
-
         self.last_eta = np.zeros((3, 1), dtype=float)
-
         self.last_tau = np.zeros((3, 1), dtype=float)
-
         self.observer_runner = self.create_timer(0.1, self.observer_loop)
 
     def observer_loop(self):
 
-        L1 = np.diag(self.L1_value)
-        L2 = np.diag(self.L2_value)
-        L3 = np.diag(self.L3_value)
+        # mode = requested_observer_mode() or self.last_observer_mode
+        # switch mode:
+        # ...
 
-        eta_hat, nu_hat, bias_hat = luenberger(
-            self.last_eta,
-            self.last_tau,
-            L1,
-            L2,
-            L3
-        )
+        eta_hat = np.ndarray([0])
+        nu_hat = np.ndarray([0])
+        bias_hat = np.ndarray([0])
 
         obs = tmr4243_interfaces.msg.Observer()
         obs.eta = eta_hat.flatten().tolist()
@@ -132,9 +106,11 @@ class Observer(rclpy.node.Node):
         self.pubs['observer'].publish(obs)
 
     def tau_callback(self, msg: std_msgs.msg.Float32MultiArray):
+        assert len(msg.data) == 3, "someone provided fucked input"
         self.last_tau = np.array([msg.data], dtype=float).T
 
     def eta_callback(self, msg: std_msgs.msg.Float32MultiArray):
+        assert len(msg.data) == 3, "someone provided fucked input"
         self.last_eta = np.array([msg.data], dtype=float).T
 
 

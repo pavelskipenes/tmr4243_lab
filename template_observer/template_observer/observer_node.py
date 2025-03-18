@@ -20,44 +20,31 @@
 # Year: 2022
 # Copyright (C) 2024 NTNU Marine Cybernetics Laboratory
 
-import rclpy
-import rclpy.node
-import numpy as np
-import rcl_interfaces.msg
-
+from numpy.typing import NDArray
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
+from template_observer.luenberger import Luenberger
+import numpy as np
+import rclpy
+import rclpy.node
 import std_msgs.msg
 import tmr4243_interfaces.msg
-
-from template_observer.luenberger import luenberger
-
-
-class Raft():
-    mass = np.matrix(
-        [
-            [16, 0, 0],
-            [0, 24, 0.53],
-            [0, 0.53, 2.8],
-        ], dtype=np.float64)
-    damping = np.matrix(
-        [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-        ], dtype=np.float64)
+from template_observer.raft import Raft
 
 
 class Observer(rclpy.node.Node):
-    TASK_DEADRECKONING = 'deadreckoning'
     TASK_LUENBERGER = 'luenberger'
-    TASK_LIST = [TASK_DEADRECKONING, TASK_LUENBERGER]
+    TASK_LIST = [TASK_LUENBERGER]
 
     def __init__(self):
         super().__init__('cse_observer')
 
         self.subs: dict[str, Subscription] = {}
         self.pubs: dict[str, Publisher] = {}
+        self.delta_time: float = 0.1
+
+        self.last_eta: NDArray[np.float64] | None = None
+        self.last_tau: NDArray[np.float64] | None = None
 
         self.subs["tau"] = self.create_subscription(
             std_msgs.msg.Float32MultiArray, '/tmr4243/state/tau', self.tau_callback, 10
@@ -68,50 +55,58 @@ class Observer(rclpy.node.Node):
         self.pubs['observer'] = self.create_publisher(
             tmr4243_interfaces.msg.Observer, '/tmr4243/observer/eta', 1
         )
+        raft = Raft()
 
-        self.task = Observer.TASK_LUENBERGER
-        self.declare_parameter(
-            'task',
-            self.task,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Task",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_STRING,
-                read_only=False,
-                additional_constraints=f"Allowed values: {' '.join(Observer.TASK_LIST)}"
-            )
+        optimal_observer_gains = np.array(
+            [[0.01, 0.01, 0.03800937]], dtype=np.float64)
+
+        initial_state_estimate = np.zeros((9, 1), dtype=np.float64)
+        assert np.shape(initial_state_estimate) == (
+            9, 1), np.shape(initial_state_estimate)
+
+        bias_time_constants = np.array([[1.0, 1.0, 0.1]], dtype=np.float64).T
+        self.task = Luenberger(
+            damping=raft.damping,
+            mass=raft.mass,
+            observer_gains=optimal_observer_gains,
+            time_step=self.delta_time,
+            bias_time_constants=bias_time_constants,
+            initial_state_estimate=initial_state_estimate,
         )
 
-        self.task = self.get_parameter(
-            'task').get_parameter_value().string_value
+        self.observer_runner = self.create_timer(
+            self.delta_time, self.observer_loop)
 
-        self.get_logger().info(f"Task: {self.task}")
-        self.last_eta = np.zeros((3, 1), dtype=float)
-        self.last_tau = np.zeros((3, 1), dtype=float)
-        self.observer_runner = self.create_timer(0.1, self.observer_loop)
-
-    def observer_loop(self):
-
-        # mode = requested_observer_mode() or self.last_observer_mode
-        # switch mode:
-        # ...
-
-        eta_hat = np.ndarray([0])
-        nu_hat = np.ndarray([0])
-        bias_hat = np.ndarray([0])
-
-        obs = tmr4243_interfaces.msg.Observer()
-        obs.eta = eta_hat.flatten().tolist()
-        obs.nu = nu_hat.flatten().tolist()
-        obs.bias = bias_hat.flatten().tolist()
-        self.pubs['observer'].publish(obs)
-
-    def tau_callback(self, msg: std_msgs.msg.Float32MultiArray):
+    def tau_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
         assert len(msg.data) == 3, "someone provided fucked input"
         self.last_tau = np.array([msg.data], dtype=float).T
 
-    def eta_callback(self, msg: std_msgs.msg.Float32MultiArray):
+    def eta_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
         assert len(msg.data) == 3, "someone provided fucked input"
         self.last_eta = np.array([msg.data], dtype=float).T
+
+    def observer_loop(self) -> None:
+        if self.last_eta is None or self.last_tau is None:
+            self.get_logger().debug("observer has not received enough input yet. Cannot estimate")
+            return
+
+        assert self.last_eta is not None
+        assert self.last_tau is not None
+
+        observed_state = self.task.observe(
+            measurement=self.last_eta,
+            actuation_input=self.last_tau,
+        )
+
+        assert isinstance(observed_state, list)
+        assert len(observed_state) == 9
+
+        observer_message = tmr4243_interfaces.msg.Observer()
+        observer_message.eta = observed_state[0:3]
+        observer_message.nu = observed_state[4:6]
+        observer_message.bias = observed_state[7:9]
+
+        self.pubs['observer'].publish(observer_message)
 
 
 def main():

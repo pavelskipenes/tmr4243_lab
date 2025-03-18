@@ -1,13 +1,30 @@
 /**:
   ros__parameters:
-    LEFT_TRIGGER: 0
-    RIGHT_TRIGGER: 0
-    LEFT_STICK_VERTICAL: 0
-    LEFT_STICK_HORIZONTAL: 0
-    RIGHT_STICK_VERTICAL: 0
-    RIGHT_STICK_HORIZONTAL: 0
+    # https://docs.ros.org/en/ros2_packages/jazzy/api/joy/index.html#ros-2-driver-for-generic-joysticks-and-game-controllers
+    # Even though documentation provides indexies, the indexies are incorrect for playstation 4 controller on linux with both package joy and joy_linux
+    # TODO: this is ps4 specific mappings. this configuration should reflect that somehow instead of being in global scope
 
-    A_BUTTON: 0 # A button for Xbox, (Cross)     x button for PS
-    B_BUTTON: 0 # B button for Xbox, (Square)    ⬜ button for PS
-    X_BUTTON: 0 # X button for Xbox, (Circle)    ◯ button for PS
-    Y_BUTTON: 0 # Y button for Xbox, (Triangle)  △ button for PS
+    # Axes. positive values to the left and up
+    LEFT_X: 0
+    LEFT_Y: 1
+    TRIGGER_LEFT: 2 # returns 1.0 when idle, -1.0 when fully pressed
+    RIGHT_X: 3
+    RIGHT_Y: 4
+    TRIGGER_RIGHT: 5 # returns 1.0 when idle, -1.0 when fully pressed
+    DPAD_HORIZONTAL: 6 # returns one of {-1.0, 0.0, 1.0}
+    DPAD_VERTICAL: 7
+
+    # Buttons
+    # returns 1.0 when pressed, 0 otherwise
+    CROSS: 0
+    CIRCLE: 1
+    TRIANGLE: 2
+    SQUARE: 3
+    SHOULDER_LEFT: 4
+    SHOULDER_RIGHT: 5
+    # 6 and 7 missing
+    SHARE: 8
+    OPTIONS: 9
+    GUIDE: 10 # Middle/Manufacturer Button
+    STICK_LEFT: 11
+    STICK_RIGHT: 12

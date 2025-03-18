@@ -20,17 +20,17 @@ def generate_launch_description():
     arg_task = launch.actions.DeclareLaunchArgument(
         'task',
         default_value=launch.substitutions.TextSubstitution(text='simple'),
-        description='Joystick control task type. Choose between simple, basin, and body.',
+        description='Joystick control task type. Choose between simple, basin and body.',
         choices=['simple', 'basin', 'body']
     )
 
     node_joystick_control = launch_ros.actions.Node(
         package='template_joystick_control',
-        executable='joystick_control_node.py',
+        executable='control_node.py',
         name=f'{anon()}joystick_control',
         parameters=[
-                {'task': launch.substitutions.LaunchConfiguration('task')},
-                param_file
+            {'task': launch.substitutions.LaunchConfiguration('task')},
+            param_file
         ],
         output='screen'
     )

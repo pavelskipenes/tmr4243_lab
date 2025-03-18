@@ -22,18 +22,24 @@
 
 import rclpy
 import rclpy.node
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 import std_msgs.msg
 import numpy as np
 
-from template_thrust_allocation.thruster_allocation import thruster_allocation
+from template_thrust_allocation.thrust_allocation_class import ThrustAllocator
+from template_thrust_allocation.thruster_positions import ThrusterPositions
 
 
 class ThrustAllocation(rclpy.node.Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("tmr4243_thrust_allocation_node")
 
-        self.pubs = {}
-        self.subs = {}
+        self.thrust_allocator: ThrustAllocator = ThrustAllocator(
+            ThrusterPositions())
+
+        self.pubs: dict[str, Publisher] = {}
+        self.subs: dict[str, Subscription] = {}
 
         self.subs["tau_cmd"] = self.create_subscription(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/tau', self.tau_cmd_callback, 1)
@@ -41,25 +47,15 @@ class ThrustAllocation(rclpy.node.Node):
         self.pubs["u_cmd"] = self.create_publisher(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/u', 1)
 
-        self.last_tau = np.zeros((3, 1), dtype=float)
-
-        self.timer = self.create_timer(0.1, self.timer_callback)
-
-    def timer_callback(self):
-
+    def tau_cmd_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
+        tau = np.array([msg.data], dtype=float).flatten()
         u_cmd = std_msgs.msg.Float32MultiArray()
-
-        u_cmd.data = thruster_allocation(self.tau).flatten().tobytes()
-
+        u = self.thrust_allocator.allocate_extended(tau).tolist()
+        u_cmd.data = u
         self.pubs["u_cmd"].publish(u_cmd)
 
-    def tau_cmd_callback(self, msg):
 
-        self.last_tau = np.array([msg.data], dtype=float).T
-
-
-def main(args=None):
-    # Initialize the node
+def main(args=None) -> None:
     rclpy.init(args=args)
 
     node = ThrustAllocation()

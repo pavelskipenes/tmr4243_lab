@@ -15,6 +15,9 @@ def joystick_basin(
     comamnded directions that are interpreted with respect to basin / pool.
     If heading is 0 the effect will be the same as if user called joystick_body.
     """
+    # double the vaule in surge and sway to compensate for the two azimuth thrusters.
+    # However this should probably be rewritten to something that normalizes the
+    # output given the joy actuation.
     surge_command = 2 * joystick.axes[axes.LEFT_Y]
     sway_command = 2 * joystick.axes[axes.LEFT_X]
     yaw_command = joystick.axes[axes.RIGHT_X]

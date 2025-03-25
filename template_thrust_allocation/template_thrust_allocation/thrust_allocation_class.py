@@ -181,7 +181,7 @@ class ThrustAllocator():
             np.eye(5) -
             self.weighted_pseudoinverse @
             self.extended_thrust_conf
-        ) @ desired_force
+        ) @ self._force_bias_last
         self._force_bias_last = current_force_bias
         return current_force_bias
 

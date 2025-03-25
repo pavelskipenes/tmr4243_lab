@@ -15,9 +15,9 @@ def joystick_basin(
     comamnded directions that are interpreted with respect to basin / pool.
     If heading is 0 the effect will be the same as if user called joystick_body.
     """
+    surge_command = 2 * joystick.axes[axes.LEFT_Y]
+    sway_command = 2 * joystick.axes[axes.LEFT_X]
     yaw_command = joystick.axes[axes.RIGHT_X]
-    surge_command = joystick.axes[axes.LEFT_Y]
-    sway_command = joystick.axes[axes.LEFT_X]
 
     tau = inv_rotate(
         heading) @ np.array([surge_command, sway_command, yaw_command], dtype=float).T

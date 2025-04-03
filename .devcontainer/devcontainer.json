@@ -7,7 +7,7 @@
     // Make sure to use the Docker bind syntax for your workspaceMount as well
     "workspaceMount": "type=bind,source=${localWorkspaceFolder},target=/home/developer/ros_ws/src/${localWorkspaceFolderBasename}",
     "workspaceFolder": "/home/developer/ros_ws/src/${localWorkspaceFolderBasename}",
-
+    "remoteUser": "developer",
     "containerUser": "developer",
     "customizations": {
         "vscode": {
@@ -32,7 +32,7 @@
         "ROS_AUTOMATIC_DISCOVERY_RANGE": "LOCALHOST"
     },
     "runArgs": [
-        "--net=host",
+        "--net=host"
         // "-e", "DISPLAY=${env:DISPLAY}"
     ],
     "mounts": [

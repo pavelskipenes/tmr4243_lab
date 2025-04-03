@@ -49,7 +49,7 @@ def get_actuation_topic_new_task(
         case Task.SIMPLE:
             return joystick_simple(msg, axes), task
         case Task.BODY:
-            return joystick_body(msg, axes), task
+            return joystick_body(msg, axes, 0), task
         case Task.BASIN:
             return joystick_basin(msg, axes, heading), task
         case _:

@@ -1,0 +1,332 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab tab_name="Pose Observer" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="3" sizes="0.333748;0.332503;0.333748">
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+       <range right="618.099595" top="8.881272" bottom="8.831638" left="518.100841"/>
+       <limitY/>
+       <curve name="/tmr4243/observer/eta/eta[0]" color="#00ff00">
+        <transform name="Scale/Offset" alias="surge_observed">
+         <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+        </transform>
+       </curve>
+       <curve name="/tmr4243/state/eta/data[0]" color="#ff0000">
+        <transform name="Scale/Offset" alias="surge">
+         <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+       <range right="618.099595" top="38.873729" bottom="38.685162" left="518.100841"/>
+       <limitY/>
+       <curve name="/tmr4243/observer/eta/eta[1]" color="#00ff00">
+        <transform name="Scale/Offset" alias="sway_observed">
+         <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+        </transform>
+       </curve>
+       <curve name="/tmr4243/state/eta/data[1]" color="#ff0000">
+        <transform name="Scale/Offset" alias="sway">
+         <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+       <range right="618.099595" top="-1.471908" bottom="-1.500750" left="518.100841"/>
+       <limitY/>
+       <curve name="/tmr4243/observer/eta/eta[2]" color="#00ff00">
+        <transform name="Scale/Offset" alias="heading_observed">
+         <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+        </transform>
+       </curve>
+       <curve name="/tmr4243/state/eta/data[2]" color="#ff0000">
+        <transform name="Scale/Offset" alias="heading">
+         <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Observer" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="2" sizes="0.5;0.5">
+     <DockSplitter orientation="|" count="2" sizes="0.500469;0.499531">
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.099595" top="0.000843" bottom="-0.039269" left="518.100841"/>
+        <limitY/>
+        <curve name="/tmr4243/observer/eta/nu[0]" color="#00ff00">
+         <transform name="Scale/Offset" alias="nu_1">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.099595" top="0.016368" bottom="-0.000359" left="518.100841"/>
+        <limitY/>
+        <curve name="/tmr4243/observer/eta/bias[0]" color="#00ff00">
+         <transform name="Scale/Offset" alias="bias_1">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter orientation="|" count="2" sizes="0.500469;0.499531">
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.099595" top="0.013464" bottom="-0.000618" left="518.100841"/>
+        <limitY/>
+        <curve name="/tmr4243/observer/eta/nu[1]" color="#00ff00">
+         <transform name="Scale/Offset" alias="nu_2">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.099595" top="0.012189" bottom="-0.000825" left="518.100841"/>
+        <limitY/>
+        <curve name="/tmr4243/observer/eta/bias[1]" color="#00ff00">
+         <transform name="Scale/Offset" alias="bias_2">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="map" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="1" sizes="1">
+     <DockArea name="...">
+      <plot style="Lines" mode="XYPlot" flip_x="false" flip_y="false">
+       <range right="8.988959" top="38.873729" bottom="38.685162" left="8.723952"/>
+       <limitY/>
+       <curve name="/tmr4243/state/eta/data[[0];1]]" color="#ff0000" curve_x="/tmr4243/state/eta/data[0]" curve_y="/tmr4243/state/eta/data[1]"/>
+       <curve name="/tmr4243/observer/eta/eta[[0];1]]" color="#00ff00" curve_x="/tmr4243/observer/eta/eta[0]" curve_y="/tmr4243/observer/eta/eta[1]"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Thrust Allocator" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="2" sizes="0.5;0.5">
+     <DockSplitter orientation="|" count="3" sizes="0.333647;0.332707;0.333647">
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/tau/data[0]" color="#ff0000">
+         <transform name="Scale/Offset" alias="tau surge requested">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+        <curve name="/tmr4243/state/tau/data[0]" color="#00ff00">
+         <transform name="Scale/Offset" alias="tau surge">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/tau/data[1]" color="#ff0000">
+         <transform name="Scale/Offset" alias="tau sway requested">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+        <curve name="/tmr4243/state/tau/data[1]" color="#00ff00">
+         <transform name="Scale/Offset" alias="tau sway">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/tau/data[2]" color="#ff0000">
+         <transform name="Scale/Offset" alias="tau yaw requested">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+        <curve name="/tmr4243/state/tau/data[2]" color="#00ff00">
+         <transform name="Scale/Offset" alias="tau yaw">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter orientation="|" count="5" sizes="0.199623;0.200565;0.199623;0.200565;0.199623">
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/u/data[0]" color="#ff0000">
+         <transform name="Scale/Offset" alias="Tunnel">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/u/data[1]" color="#ff0000">
+         <transform name="Scale/Offset" alias="Azimuth 0 surge">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/u/data[2]" color="#ff0000">
+         <transform name="Scale/Offset" alias="Azimuth 0 sway">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/u/data[3]" color="#ff0000">
+         <transform name="Scale/Offset" alias="Azimuth 1 surge">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.080537" top="0.100000" bottom="-0.100000" left="518.076876"/>
+        <limitY/>
+        <curve name="/tmr4243/command/u/data[4]" color="#ff0000">
+         <transform name="Scale/Offset" alias="Azimuth 1 sway">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Joystick" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="2" sizes="0.5;0.5">
+     <DockSplitter orientation="|" count="2" sizes="0.500469;0.499531">
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.075758" top="1.100000" bottom="0.900000" left="-0.150166"/>
+        <limitY/>
+        <curve name="/joy/axes[2]" color="#00ff00">
+         <transform name="Scale/Offset" alias="Left shoulder">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="TimeSeries" flip_x="false" flip_y="false">
+        <range right="618.075758" top="1.100000" bottom="0.900000" left="-0.150166"/>
+        <limitY/>
+        <curve name="/joy/axes[5]" color="#00ff00">
+         <transform name="Scale/Offset" alias="Right shoulder">
+          <options value_offset="0.0" time_offset="0.0" value_scale="1.0"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter orientation="|" count="2" sizes="0.500469;0.499531">
+      <DockArea name="...">
+       <plot style="Lines" mode="XYPlot" flip_x="true" flip_y="false">
+        <range right="-0.150166" top="0.100000" bottom="-0.100000" left="0.150166"/>
+        <limitY/>
+        <curve name="/joy/axes[[0];1]]" color="#00ff00" curve_x="/joy/axes[0]" curve_y="/joy/axes[1]"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot style="Lines" mode="XYPlot" flip_x="true" flip_y="false">
+        <range right="-0.149502" top="0.100000" bottom="-0.100000" left="0.149502"/>
+        <limitY/>
+        <curve name="/joy/axes[[3];4]]" color="#00ff00" curve_x="/joy/axes[3]" curve_y="/joy/axes[4]"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="2"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <parameters time_axis="" delimiter="0"/>
+  </plugin>
+  <plugin ID="DataLoad MCAP"/>
+  <plugin ID="DataLoad ROS2 bags">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+   <selected_topics value=""/>
+  </plugin>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="ROS2 Topic Subscriber">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+   <selected_topics value="/tmr4243/command/tau;/tmr4243/command/u;/tmr4243/observer/eta;/tmr4243/state/eta;/tmr4243/state/tau;/joy"/>
+  </plugin>
+  <plugin ID="UDP Server"/>
+  <plugin ID="WebSocket Server"/>
+  <plugin ID="ZMQ Subscriber"/>
+  <plugin ID="Fast Fourier Transform"/>
+  <plugin ID="Quaternion to RPY"/>
+  <plugin ID="Reactive Script Editor">
+   <library code="--[[ Helper function to create a series from arrays&#xa;&#xa; new_series: a series previously created with ScatterXY.new(name)&#xa; prefix:     prefix of the timeseries, before the index of the array&#xa; suffix_X:   suffix to complete the name of the series containing the X value. If [nil], use the index of the array.&#xa; suffix_Y:   suffix to complete the name of the series containing the Y value&#xa; timestamp:   usually the tracker_time variable&#xa;              &#xa; Example:&#xa; &#xa; Assuming we have multiple series in the form:&#xa; &#xa;   /trajectory/node.{X}/position/x&#xa;   /trajectory/node.{X}/position/y&#xa;   &#xa; where {N} is the index of the array (integer). We can create a reactive series from the array with:&#xa; &#xa;   new_series = ScatterXY.new(&quot;my_trajectory&quot;) &#xa;   CreateSeriesFromArray( new_series, &quot;/trajectory/node&quot;, &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );&#xa;--]]&#xa;&#xa;function CreateSeriesFromArray( new_series, prefix, suffix_X, suffix_Y, timestamp )&#xa;  &#xa;  --- clear previous values&#xa;  new_series:clear()&#xa;  &#xa;  --- Append points to new_series&#xa;  index = 0&#xa;  while(true) do&#xa;&#xa;    x = index;&#xa;    -- if not nil, get the X coordinate from a series&#xa;    if suffix_X ~= nil then &#xa;      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )&#xa;      if series_x == nil then break end&#xa;      x = series_x:atTime(timestamp)&#x9; &#xa;    end&#xa;    &#xa;    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )&#xa;    if series_y == nil then break end &#xa;    y = series_y:atTime(timestamp)&#xa;    &#xa;    new_series:push_back(x,y)&#xa;    index = index+1&#xa;  end&#xa;end&#xa;&#xa;--[[ Similar to the built-in function GetSeriesNames(), but select only the names with a give prefix. --]]&#xa;&#xa;function GetSeriesNamesByPrefix(prefix)&#xa;  -- GetSeriesNames(9 is a built-in function&#xa;  all_names = GetSeriesNames()&#xa;  filtered_names = {}&#xa;  for i, name in ipairs(all_names)  do&#xa;    -- check the prefix&#xa;    if name:find(prefix, 1, #prefix) then&#xa;      table.insert(filtered_names, name);&#xa;    end&#xa;  end&#xa;  return filtered_names&#xa;end&#xa;&#xa;--[[ Modify an existing series, applying offsets to all their X and Y values&#xa;&#xa; series: an existing timeseries, obtained with TimeseriesView.find(name)&#xa; delta_x: offset to apply to each x value&#xa; delta_y: offset to apply to each y value &#xa;  &#xa;--]]&#xa;&#xa;function ApplyOffsetInPlace(series, delta_x, delta_y)&#xa;  -- use C++ indeces, not Lua indeces&#xa;  for index=0, series:size()-1 do&#xa;    x,y = series:at(index)&#xa;    series:set(index, x + delta_x, y + delta_y)&#xa;  end&#xa;end&#xa;"/>
+   <scripts/>
+  </plugin>
+  <plugin ID="CSV Exporter"/>
+  <plugin ID="ROS2 Topic Re-Publisher"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="ROS2 Topic Subscriber"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

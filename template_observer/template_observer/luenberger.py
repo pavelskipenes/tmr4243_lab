@@ -1,7 +1,9 @@
-import numpy as np
 from numpy.typing import NDArray
-from typing import List
+from template_observer.abstract_observer import Observer
+from template_observer.raft import Raft
 from template_observer.wrap import wrap
+from typing import List
+import numpy as np
 
 
 def rotation_matrix(psi: float) -> NDArray[np.float64]:
@@ -12,7 +14,7 @@ def rotation_matrix(psi: float) -> NDArray[np.float64]:
     ], dtype=np.float64)
 
 
-class Luenberger():
+class Luenberger(Observer):
     damping: NDArray[np.float64]
     mass: NDArray[np.float64]
     mass_inv: NDArray[np.float64]
@@ -22,25 +24,23 @@ class Luenberger():
     state_estimate_current: NDArray[np.float64]
 
     def __init__(self,
-                 damping: NDArray[np.float64],
-                 mass: NDArray[np.float64],
-                 observer_gains: NDArray[np.float64],
+                 raft: Raft,
                  time_step: float,
                  bias_time_constants: NDArray[np.float64],
+                 L_1: NDArray[np.float64],
+                 L_2: NDArray[np.float64],
+                 L_3: NDArray[np.float64],
                  initial_state_estimate: NDArray[np.float64] = np.array(
                      np.zeros(9), dtype=np.float64),
                  ) -> None:
-
-        # todo: make this into an input
-
         assert np.shape(bias_time_constants) == (
             3, 1), np.shape(bias_time_constants)
 
-        assert np.shape(damping) == (3, 3)
-        self.damping = damping
+        assert np.shape(raft.damping) == (3, 3)
+        self.damping = raft.damping
 
-        assert np.shape(mass) == (3, 3)
-        self.mass_inv = np.linalg.inv(mass)
+        assert np.shape(raft.mass) == (3, 3)
+        self.mass_inv = np.linalg.inv(raft.mass)
 
         self.dt = time_step
 
@@ -48,21 +48,16 @@ class Luenberger():
             9, 1), np.shape(initial_state_estimate)
         self.state_estimate_current = initial_state_estimate
 
-        self.L1: NDArray[np.float64] = np.diag(
-            [1/val * 2 * np.pi for val in bias_time_constants.flatten().tolist()])
-        assert np.shape(self.L1) == (3, 3), np.shape(self.L1)
-
         self.bias_time_constants = np.diag(
             bias_time_constants.flatten().tolist())
 
-        self.L2: NDArray[np.float64] = np.diag(np.diag(mass))
+        assert L_1.shape == (3, 3)
+        assert L_2.shape == (3, 3)
+        assert L_3.shape == (3, 3)
 
-        assert self.L2.shape == (3, 3)
-
-        assert observer_gains.shape == (1, 3)
-
-        self.L3: NDArray[np.float64] = self.L2 * observer_gains.T
-        assert self.L3.shape == (3, 3)
+        self.L1 = L_1
+        self.L2 = L_2
+        self.L3 = L_3
 
     def observe(
         self,
@@ -131,3 +126,6 @@ class Luenberger():
         # this pience of shit code just returns the column state estimate as a list of elements
         # there is probably a much nicer way of doing this
         return np.array(self.state_estimate_current.T.tolist()).flatten().tolist()
+
+    def get_name(self) -> str:
+        return "luenberger"

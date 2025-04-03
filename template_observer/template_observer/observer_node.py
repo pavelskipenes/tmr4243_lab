@@ -23,18 +23,23 @@
 from numpy.typing import NDArray
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
+from template_joystick_control.mapping import JoystickButtons
+from template_observer.dead_reconing import DeadReconing
 from template_observer.luenberger import Luenberger
+from template_observer.raft import Raft
+from typing import List
 import numpy as np
 import rclpy
 import rclpy.node
+import sensor_msgs.msg
 import std_msgs.msg
 import tmr4243_interfaces.msg
-from template_observer.raft import Raft
 
 
 class Observer(rclpy.node.Node):
     TASK_LUENBERGER = 'luenberger'
     TASK_LIST = [TASK_LUENBERGER]
+    joystick_buttons: JoystickButtons
 
     def __init__(self):
         super().__init__('cse_observer')
@@ -55,24 +60,34 @@ class Observer(rclpy.node.Node):
         self.pubs['observer'] = self.create_publisher(
             tmr4243_interfaces.msg.Observer, '/tmr4243/observer/eta', 1
         )
-        raft = Raft()
+        self.subs["joy"] = self.create_subscription(
+            sensor_msgs.msg.Joy, '/joy', self.joy_callback, 10)
 
-        optimal_observer_gains = np.array(
-            [[0.01, 0.01, 0.03800937]], dtype=np.float64)
+        raft = Raft()
+        self.joystick_buttons: JoystickButtons = JoystickButtons()
 
         initial_state_estimate = np.zeros((9, 1), dtype=np.float64)
         assert np.shape(initial_state_estimate) == (
             9, 1), np.shape(initial_state_estimate)
 
+        L_1 = np.eye(3) * 2.5
+        L_2 = np.eye(3) * 0.1
+        L_3 = np.eye(3) * 0.8
+
         bias_time_constants = np.array([[1.0, 1.0, 0.1]], dtype=np.float64).T
-        self.task = Luenberger(
-            damping=raft.damping,
-            mass=raft.mass,
-            observer_gains=optimal_observer_gains,
+
+        self.observers: List[Luenberger | DeadReconing] = [observer(
+            raft=raft,
             time_step=self.delta_time,
             bias_time_constants=bias_time_constants,
+            L_1=L_1,
+            L_2=L_2,
+            L_3=L_3,
             initial_state_estimate=initial_state_estimate,
-        )
+        ) for observer in [Luenberger, DeadReconing]]
+
+        # default to Luenberger
+        self.task = self.observers[0]
 
         self.observer_runner = self.create_timer(
             self.delta_time, self.observer_loop)
@@ -85,13 +100,38 @@ class Observer(rclpy.node.Node):
         assert len(msg.data) == 3, "someone provided fucked input"
         self.last_eta = np.array([msg.data], dtype=float).T
 
+    def joy_callback(self, joystick_message: sensor_msgs.msg.Joy) -> None:
+
+        if joystick_message.buttons[self.joystick_buttons.SHOULDER_LEFT] and joystick_message.buttons[self.joystick_buttons.SHOULDER_RIGHT]:
+            self.get_logger().info("stop holding both buttons!")
+            return
+
+        changed = False
+        if joystick_message.buttons[self.joystick_buttons.SHOULDER_LEFT] and not isinstance(self.task, Luenberger):
+            self.task = self.observers[0]
+            changed = True
+
+        if joystick_message.buttons[self.joystick_buttons.SHOULDER_RIGHT] and not isinstance(self.task, DeadReconing):
+
+            self.task = self.observers[1]
+            changed = True
+
+        if changed:
+            self.get_logger().info(
+                f"new active observer {self.task.get_name()}")
+
     def observer_loop(self) -> None:
-        if self.last_eta is None or self.last_tau is None:
+        if self.last_tau is None:
+            self.get_logger().debug("observer has not received enough input yet. Cannot estimate")
+            return
+
+        assert self.last_tau is not None
+
+        if self.last_eta is None:
             self.get_logger().debug("observer has not received enough input yet. Cannot estimate")
             return
 
         assert self.last_eta is not None
-        assert self.last_tau is not None
 
         observed_state = self.task.observe(
             measurement=self.last_eta,

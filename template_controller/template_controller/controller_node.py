@@ -152,21 +152,22 @@ class Controller(rclpy.node.Node):
 
         self.last_observation = None
 
-        timer_period = 0.1  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        # timer_period = 0.1  # seconds
+        # self.timer = self.create_timer(timer_period, self.timer_callback)
 
         controller_period = 0.1  # seconds
         self.controller_timer = self.create_timer(
             controller_period, self.controller_callback)
+
         self.task = Controller.TASK_BACKSTEPPING_CONTROLLER
 
-    def timer_callback(self):
-
-        self.task = self.get_parameter(
-            "task").get_parameter_value().string_value
-
-        self.get_logger().info(
-            f"Parameter task: {self.task}", throttle_duration_sec=1.0)
+    # def timer_callback(self):
+    #
+    #     self.task = self.get_parameter(
+    #         "task").get_parameter_value().string_value
+    #
+    #     self.get_logger().info(
+    #         f"Parameter task: {self.task}", throttle_duration_sec=1.0)
 
     def controller_callback(self):
 

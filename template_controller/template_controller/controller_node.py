@@ -23,6 +23,8 @@
 import rclpy
 import rclpy.node
 import rcl_interfaces.msg
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 import tmr4243_interfaces.msg
 import std_msgs.msg
 import numpy as np
@@ -42,8 +44,8 @@ class Controller(rclpy.node.Node):
     def __init__(self):
         super().__init__("tmr4243_controller")
 
-        self.pubs = {}
-        self.subs = {}
+        self.pubs: dict[str, Publisher] = {}
+        self.subs: dict[str, Subscription] = {}
 
         self.subs["reference"] = self.create_subscription(
             tmr4243_interfaces.msg.Reference, '/tmr4243/control/reference', self.received_reference, 10)
@@ -55,21 +57,21 @@ class Controller(rclpy.node.Node):
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/tau', 1)
 
         # Fossen tuning
-        relative_damping_ratio = np.eye(3)
-        period = 10
-        natural_frequency = (2*np.pi/period) * np.eye(3)
-
-        M = np.array([[16, 0, 0],
-                      [0, 24, 0.53],
-                      [0, 0.53, 2.8]])
-
-        D = np.array([[0.66, 0, 0],
-                      [0, 1.3, 2.8],
-                      [0, 0, 1.9]])
-
-        Kp = (natural_frequency**2) @ M
-        Kd = 2 * relative_damping_ratio @ natural_frequency @ M - D
-        Ki = 0.1 * Kp * natural_frequency
+        # relative_damping_ratio = np.eye(3)
+        # period = 10
+        # natural_frequency = (2*np.pi/period) * np.eye(3)
+        #
+        # M = np.array([[16, 0, 0],
+        #               [0, 24, 0.53],
+        #               [0, 0.53, 2.8]])
+        #
+        # D = np.array([[0.66, 0, 0],
+        #               [0, 1.3, 2.8],
+        #               [0, 0, 1.9]])
+        #
+        # Kp = (natural_frequency**2) @ M
+        # Kd = 2 * relative_damping_ratio @ natural_frequency @ M - D
+        # Ki = 0.1 * Kp * natural_frequency
 
         self.p_gain = 1.0
         self.declare_parameter(
@@ -102,7 +104,7 @@ class Controller(rclpy.node.Node):
                 read_only=False
             )
         )
-        self.k1_gain = [1.0, 1.0, 1.0]
+        self.k1_gain = [6.8, 8.95, 1.0]
         self.declare_parameter(
             "k1_gain",
             self.k1_gain,
@@ -112,7 +114,7 @@ class Controller(rclpy.node.Node):
                 read_only=False
             )
         )
-        self.k2_gain = [1.0, 1.0, 1.0]
+        self.k2_gain = [9.5, 9.5, 7.0]
         self.declare_parameter(
             "k2_gain",
             self.k2_gain,
@@ -156,6 +158,7 @@ class Controller(rclpy.node.Node):
         controller_period = 0.1  # seconds
         self.controller_timer = self.create_timer(
             controller_period, self.controller_callback)
+        self.task = Controller.TASK_BACKSTEPPING_CONTROLLER
 
     def timer_callback(self):
 

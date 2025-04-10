@@ -48,6 +48,15 @@ class ThrustAllocation(rclpy.node.Node):
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/u', 1)
 
     def tau_cmd_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
+        for val in msg.data:
+            if not np.isfinite(val):
+                self.get_logger().warn("disregarding tau because elements includes NaN")
+                return
+            if abs(val) > 3:
+                self.get_logger().warn(
+                    f"disregarding tau becuase elements include gains too high for the system to handle: {val}")
+                return
+
         tau = np.array([msg.data], dtype=float).flatten()
         u_cmd = std_msgs.msg.Float32MultiArray()
         u = self.thrust_allocator.allocate_extended(tau).tolist()

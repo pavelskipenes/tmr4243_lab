@@ -15,5 +15,5 @@ def joystick_basin(
     return [`surge` `sway` `yaw`] commands relative to `heading`
     """
 
-    offset = 0
+    offset = -pi/2
     return joystick_body(joystick, axes, heading + offset)

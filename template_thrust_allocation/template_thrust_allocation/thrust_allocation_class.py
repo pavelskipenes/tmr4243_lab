@@ -1,7 +1,7 @@
+from numpy.linalg import inv
 from numpy.typing import NDArray
 from template_thrust_allocation.thruster_positions import ThrusterPositions
 import numpy as np
-from numpy.linalg import inv
 
 
 class ThrustAllocator():
@@ -38,11 +38,11 @@ class ThrustAllocator():
         """
         self._gain = np.diag(
             [
-                1.0,  # 2.629,    # Tunnel thruster
-                1.0,  # 1.03,     # Azimuth 0 Force magnitude
-                1.0,  # 1.03,     # Azimuth 1 Force Magnitude
-                1.0,  # 1.03,     # Azimuth 0 Angle
-                1.0,  # 1.03      # Azimuth 0 Angle
+                1.0,  # Tunnel thruster
+                1.0,  # Azimuth 0 X magnitude
+                0.8,  # Azimuth 0 Y magnitude
+                1.0,  # Azimuth 1 X magnitude
+                0.8,  # Azimuth 1 Y magnitude
             ]
         )
         """

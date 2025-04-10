@@ -34,7 +34,7 @@ def generate_launch_description():
 
     group_gui = launch.actions.GroupAction(
         condition=launch.conditions.IfCondition(
-            launch.substitutions.LaunchConfiguration('use_gui', default='true')),
+            launch.substitutions.LaunchConfiguration('use_gui', default='false')),
         actions=[viz_launch]
     )
 
@@ -43,4 +43,3 @@ def generate_launch_description():
     ld.add_action(group_gui)
 
     return ld
-

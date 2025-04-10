@@ -1,22 +1,71 @@
-#!/usr/bin/env python3
-
 import numpy as np
+from numpy.typing import NDArray
 
-def backstepping_controller(observer, reference, K1_gain, K2_gain) -> np.ndarray:
+S = np.array(
+    [[0, -1, 0], [1, 0, 0], [0, 0, 0]], dtype=np.float64)
 
-    # Getting the states from the observer
-    eta_hat = observer.eta
-    nu_hat = observer.nu
-    bias_hat = observer.bias
+M = np.array([[16, 0, 0],
+              [0, 24, 0.53],
+              [0, 0.53, 2.8]])
 
-    # Getting the states from the reference
-    eta_d = reference.eta_d
-    eta_ds = reference.eta_ds
-    eta_ds2 = reference.eta_ds2
+D = np.array([[0.66, 0, 0],
+              [0, 1.3, 2.8],
+              [0, 0, 1.9]])
 
-    w = reference.w
-    v_s = reference.v_s
-    v_ss = reference.v_ss
+M_inv = np.linalg.inv(M)
 
-    tau = np.zeros((3, 1), dtype=float)
+
+def rotation_matrix(heading: np.float64):
+    return np.array([
+        [np.cos(heading), -np.sin(heading), 0],
+        [np.sin(heading),  np.cos(heading), 0],
+        [0, 0, 1]
+    ], dtype=np.float64)
+
+
+def backstepping_controller_og(
+    eta_hat,
+    nu_hat,
+    eta_d,
+    eta_ds,
+    v_s,
+    s_dot,
+    K1_gain,
+    K2_gain,
+) -> NDArray[np.float64]:
+
+    yaw_rate = nu_hat[2]
+    heading = eta_hat[2]
+
+    R = rotation_matrix(heading)
+
+    eta_error = eta_hat - eta_d
+    # V1 gradient
+    z1_k = R.T @ eta_error
+
+    # Desired alpha1
+    alpha1 = -K1_gain @ z1_k + R.T @ eta_ds * v_s
+
+    # s_dot = v_s + omega_s
+    # derivative of alpha1
+    z1_dot = nu_hat - R.T @ eta_ds * s_dot - yaw_rate * S @ z1_k
+    alpha1_dot = -K1_gain @ z1_dot - yaw_rate * S @ R.T @ eta_ds * v_s
+
+    z2_k = nu_hat - alpha1
+    # control law
+    tau = M @ alpha1_dot + D @ nu_hat - K2_gain @ z2_k
     return tau
+
+
+def backstepping_controller(observer, reference, K1_gain, K2_gain) -> NDArray[np.float64]:
+    eta_hat = np.array(observer.eta, dtype=np.float64)
+    nu_hat = np.array(observer.nu, dtype=np.float64)
+    eta_d = np.array(reference.eta_d, dtype=np.float64)
+    eta_ds = np.array(reference.eta_ds, dtype=np.float64)
+    v_s = np.array(reference.v_s, dtype=np.float64)
+    omega_s = np.array(reference.w, dtype=np.float64)
+    K1_gain = np.array(K1_gain, dtype=np.float64)
+    K2_gain = np.array(K2_gain, dtype=np.float64)
+
+    s_dot = v_s + omega_s
+    return backstepping_controller_og(eta_hat, nu_hat, eta_d, eta_ds, v_s, s_dot, K1_gain, K2_gain)

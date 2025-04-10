@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 # TOOD: check if frozen=True can be used
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, init=True)
 class JoystickButtons:
     CROSS: int = 0
     CIRCLE: int = 1

@@ -33,6 +33,7 @@ class Luenberger(Observer):
                  initial_state_estimate: NDArray[np.float64] = np.array(
                      np.zeros(9), dtype=np.float64),
                  ) -> None:
+        np.seterr(all='raise')
         assert np.shape(bias_time_constants) == (
             3, 1), np.shape(bias_time_constants)
 

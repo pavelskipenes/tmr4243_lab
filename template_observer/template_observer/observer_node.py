@@ -58,7 +58,7 @@ class Observer(rclpy.node.Node):
             std_msgs.msg.Float32MultiArray, '/tmr4243/state/eta', self.eta_callback, 10
         )
         self.pubs['observer'] = self.create_publisher(
-            tmr4243_interfaces.msg.Observer, '/tmr4243/observer/eta', 1
+            tmr4243_interfaces.msg.Observer, '/tmr4243/observer', 1
         )
         self.subs["joy"] = self.create_subscription(
             sensor_msgs.msg.Joy, '/joy', self.joy_callback, 10)
@@ -94,10 +94,20 @@ class Observer(rclpy.node.Node):
 
     def tau_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
         assert len(msg.data) == 3, "someone provided fucked input"
+        for val in msg.data:
+            if not np.isfinite(val):
+                self.get_logger().warn(
+                    f"disregarding invalid input tau {msg.data}")
+                return
         self.last_tau = np.array([msg.data], dtype=float).T
 
     def eta_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
         assert len(msg.data) == 3, "someone provided fucked input"
+        for val in msg.data:
+            if not np.isfinite(val):
+                self.get_logger().warn(
+                    f"disregarding invalid input eta {msg.data}")
+                return
         self.last_eta = np.array([msg.data], dtype=float).T
 
     def joy_callback(self, joystick_message: sensor_msgs.msg.Joy) -> None:
@@ -133,6 +143,19 @@ class Observer(rclpy.node.Node):
 
         assert self.last_eta is not None
 
+        error_message = "unreachable, values in eta is invalid"
+        for val in self.last_eta:
+            if not np.isfinite(val):
+
+                self.get_logger().fatal(error_message)
+                raise Exception(error_message)
+
+        error_message = "unreachable, values in tau is invalid"
+        for val in self.last_tau:
+            if not np.isfinite(val):
+                self.get_logger().fatal(error_message)
+                raise Exception(error_message)
+
         observed_state = self.task.observe(
             measurement=self.last_eta,
             actuation_input=self.last_tau,
@@ -145,6 +168,15 @@ class Observer(rclpy.node.Node):
         observer_message.eta = observed_state[0:3]
         observer_message.nu = observed_state[4:6]
         observer_message.bias = observed_state[7:9]
+        for val in observed_state:
+            if np.isnan(val):
+                self.get_logger().error("dropping observer publish since some components have NaN values")
+                return
+
+        observer_message = tmr4243_interfaces.msg.Observer()
+        observer_message.eta = observed_state[0:3]
+        observer_message.nu = observed_state[3:6]
+        observer_message.bias = observed_state[6:9]
 
         self.pubs['observer'].publish(observer_message)
 

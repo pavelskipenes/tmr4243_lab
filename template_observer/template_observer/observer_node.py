@@ -20,28 +20,36 @@
 # Year: 2022
 # Copyright (C) 2024 NTNU Marine Cybernetics Laboratory
 
+from numpy.typing import NDArray
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
+from template_joystick_control.mapping import JoystickButtons
+from template_observer.dead_reconing import DeadReconing
+from template_observer.luenberger import Luenberger
+from template_observer.raft import Raft
+from typing import List
+import numpy as np
 import rclpy
 import rclpy.node
-import numpy as np
-import rcl_interfaces.msg
-
+import sensor_msgs.msg
 import std_msgs.msg
 import tmr4243_interfaces.msg
 
-from template_observer.luenberger import luenberger
-from template_observer.wrap import wrap
-
 
 class Observer(rclpy.node.Node):
-    TASK_DEADRECKONING = 'deadreckoning'
     TASK_LUENBERGER = 'luenberger'
-    TASK_LIST = [TASK_DEADRECKONING, TASK_LUENBERGER]
+    TASK_LIST = [TASK_LUENBERGER]
+    joystick_buttons: JoystickButtons
 
     def __init__(self):
         super().__init__('cse_observer')
 
-        self.subs = {}
-        self.pubs = {}
+        self.subs: dict[str, Subscription] = {}
+        self.pubs: dict[str, Publisher] = {}
+        self.delta_time: float = 0.1
+
+        self.last_eta: NDArray[np.float64] | None = None
+        self.last_tau: NDArray[np.float64] | None = None
 
         self.subs["tau"] = self.create_subscription(
             std_msgs.msg.Float32MultiArray, '/tmr4243/state/tau', self.tau_callback, 10
@@ -50,92 +58,127 @@ class Observer(rclpy.node.Node):
             std_msgs.msg.Float32MultiArray, '/tmr4243/state/eta', self.eta_callback, 10
         )
         self.pubs['observer'] = self.create_publisher(
-            tmr4243_interfaces.msg.Observer, '/tmr4243/observer/eta', 1
+            tmr4243_interfaces.msg.Observer, '/tmr4243/observer', 1
         )
+        self.subs["joy"] = self.create_subscription(
+            sensor_msgs.msg.Joy, '/joy', self.joy_callback, 10)
 
-        self.task = Observer.TASK_LUENBERGER
-        self.declare_parameter(
-            'task',
-            self.task,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Task",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_STRING,
-                read_only=False,
-                additional_constraints=f"Allowed values: {' '.join(Observer.TASK_LIST)}"
-            )
-        )
-        self.task = self.get_parameter('task').get_parameter_value().string_value
+        raft = Raft()
+        self.joystick_buttons: JoystickButtons = JoystickButtons()
 
-        self.L1_value = [1.0] * 3
-        self.declare_parameter(
-            'L1',
-            self.L1_value,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="L1 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
+        initial_state_estimate = np.zeros((9, 1), dtype=np.float64)
+        assert np.shape(initial_state_estimate) == (
+            9, 1), np.shape(initial_state_estimate)
 
-        self.L2_value = [1.0] * 3
-        self.declare_parameter(
-            'L2',
-            self.L2_value,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="L2 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
+        L_1 = np.eye(3) * 2.5
+        L_2 = np.eye(3) * 0.1
+        L_3 = np.eye(3) * 0.8
 
-        self.L3_value = [1.0] * 3
-        self.declare_parameter(
-            'L3',
-            self.L3_value,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="L3 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
+        bias_time_constants = np.array([[1.0, 1.0, 0.1]], dtype=np.float64).T
 
-        self.L1_value = self.get_parameter('L1').get_parameter_value().double_array_value
-        self.L2_value = self.get_parameter('L2').get_parameter_value().double_array_value
-        self.L3_value = self.get_parameter('L3').get_parameter_value().double_array_value
+        self.observers: List[Luenberger | DeadReconing] = [observer(
+            raft=raft,
+            time_step=self.delta_time,
+            bias_time_constants=bias_time_constants,
+            L_1=L_1,
+            L_2=L_2,
+            L_3=L_3,
+            initial_state_estimate=initial_state_estimate,
+        ) for observer in [Luenberger, DeadReconing]]
 
-        self.get_logger().info(f"Task: {self.task}")
+        # default to Luenberger
+        self.task = self.observers[0]
 
-        self.last_eta = np.zeros((3, 1), dtype=float)
+        self.observer_runner = self.create_timer(
+            self.delta_time, self.observer_loop)
 
-        self.last_tau = np.zeros((3, 1), dtype=float)
-
-        self.observer_runner = self.create_timer(0.1, self.observer_loop)
-
-    def observer_loop(self):
-
-        L1 = np.diag(self.L1_value)
-        L2 = np.diag(self.L2_value)
-        L3 = np.diag(self.L3_value)
-
-        eta_hat, nu_hat, bias_hat = luenberger(
-            self.last_eta,
-            self.last_tau,
-            L1,
-            L2,
-            L3
-        )
-
-        obs = tmr4243_interfaces.msg.Observer()
-        obs.eta = eta_hat.flatten().tolist()
-        obs.nu = nu_hat.flatten().tolist()
-        obs.bias = bias_hat.flatten().tolist()
-        self.pubs['observer'].publish(obs)
-
-    def tau_callback(self, msg: std_msgs.msg.Float32MultiArray):
+    def tau_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
+        assert len(msg.data) == 3, "someone provided fucked input"
+        for val in msg.data:
+            if not np.isfinite(val):
+                self.get_logger().warn(
+                    f"disregarding invalid input tau {msg.data}")
+                return
         self.last_tau = np.array([msg.data], dtype=float).T
 
-    def eta_callback(self, msg: std_msgs.msg.Float32MultiArray):
+    def eta_callback(self, msg: std_msgs.msg.Float32MultiArray) -> None:
+        assert len(msg.data) == 3, "someone provided fucked input"
+        for val in msg.data:
+            if not np.isfinite(val):
+                self.get_logger().warn(
+                    f"disregarding invalid input eta {msg.data}")
+                return
         self.last_eta = np.array([msg.data], dtype=float).T
+
+    def joy_callback(self, joystick_message: sensor_msgs.msg.Joy) -> None:
+
+        if joystick_message.buttons[self.joystick_buttons.SHOULDER_LEFT] and joystick_message.buttons[self.joystick_buttons.SHOULDER_RIGHT]:
+            self.get_logger().info("stop holding both buttons!")
+            return
+
+        changed = False
+        if joystick_message.buttons[self.joystick_buttons.SHOULDER_LEFT] and not isinstance(self.task, Luenberger):
+            self.task = self.observers[0]
+            changed = True
+
+        if joystick_message.buttons[self.joystick_buttons.SHOULDER_RIGHT] and not isinstance(self.task, DeadReconing):
+
+            self.task = self.observers[1]
+            changed = True
+
+        if changed:
+            self.get_logger().info(
+                f"new active observer {self.task.get_name()}")
+
+    def observer_loop(self) -> None:
+        if self.last_tau is None:
+            self.get_logger().debug("observer has not received enough input yet. Cannot estimate")
+            return
+
+        assert self.last_tau is not None
+
+        if self.last_eta is None:
+            self.get_logger().debug("observer has not received enough input yet. Cannot estimate")
+            return
+
+        assert self.last_eta is not None
+
+        error_message = "unreachable, values in eta is invalid"
+        for val in self.last_eta:
+            if not np.isfinite(val):
+
+                self.get_logger().fatal(error_message)
+                raise Exception(error_message)
+
+        error_message = "unreachable, values in tau is invalid"
+        for val in self.last_tau:
+            if not np.isfinite(val):
+                self.get_logger().fatal(error_message)
+                raise Exception(error_message)
+
+        observed_state = self.task.observe(
+            measurement=self.last_eta,
+            actuation_input=self.last_tau,
+        )
+
+        assert isinstance(observed_state, list)
+        assert len(observed_state) == 9
+
+        observer_message = tmr4243_interfaces.msg.Observer()
+        observer_message.eta = observed_state[0:3]
+        observer_message.nu = observed_state[4:6]
+        observer_message.bias = observed_state[7:9]
+        for val in observed_state:
+            if np.isnan(val):
+                self.get_logger().error("dropping observer publish since some components have NaN values")
+                return
+
+        observer_message = tmr4243_interfaces.msg.Observer()
+        observer_message.eta = observed_state[0:3]
+        observer_message.nu = observed_state[3:6]
+        observer_message.bias = observed_state[6:9]
+
+        self.pubs['observer'].publish(observer_message)
 
 
 def main():

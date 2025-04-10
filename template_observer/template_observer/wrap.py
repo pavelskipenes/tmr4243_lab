@@ -1,7 +1,6 @@
- #!/usr/bin/env python3
+import numpy as np
 
-def wrap(yaw):
 
-    # Enter your code here
+def wrap(angle: float) -> float:
+    return (angle + np.pi) % (2 * np.pi) - np.pi
 
-    return yaw

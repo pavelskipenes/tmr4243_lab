@@ -1,15 +1,16 @@
 
 import numpy as np
+from numpy._typing import NDArray
 import tmr4243_interfaces.msg
 
 
 def PD_FF_controller(
         observer: tmr4243_interfaces.msg.Observer,
         reference: tmr4243_interfaces.msg.Reference,
-        P_gain: float,
-        D_gain: float) -> np.ndarray:
+        P_gain: np.float64,
+        D_gain: np.float64) -> NDArray[np.float64]:
 
-    tau = np.zeros((3, 1), dtype=float)
+    tau = np.zeros((3, 1), dtype=np.float64)
 
     # Getting the states from the observer
     eta_hat = observer.eta
@@ -25,3 +26,4 @@ def PD_FF_controller(
     v_ss = reference.v_ss
 
     return tau
+

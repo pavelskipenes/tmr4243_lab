@@ -1,14 +1,15 @@
 import numpy as np
+from numpy._typing import NDArray
 import tmr4243_interfaces.msg
+
 
 def PID_controller(
         observer: tmr4243_interfaces.msg.Observer,
         reference: tmr4243_interfaces.msg.Reference,
         P_gain: float,
         I_gain: float,
-        D_gain: float) -> np.ndarray:
+        D_gain: float) -> NDArray[np.float64]:
     tau = np.zeros((3, 1), dtype=float)
-
 
     # Getting the states from the observer
     eta_hat = observer.eta
@@ -23,9 +24,8 @@ def PID_controller(
     v_s = reference.v_s
     v_ss = reference.v_ss
 
-
     #
-    ## Write your code below
+    # Write your code below
     #
 
     return tau

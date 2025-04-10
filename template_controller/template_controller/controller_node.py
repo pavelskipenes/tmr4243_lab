@@ -56,23 +56,6 @@ class Controller(rclpy.node.Node):
         self.pubs["tau_cmd"] = self.create_publisher(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/tau', 1)
 
-        # Fossen tuning
-        # relative_damping_ratio = np.eye(3)
-        # period = 10
-        # natural_frequency = (2*np.pi/period) * np.eye(3)
-        #
-        # M = np.array([[16, 0, 0],
-        #               [0, 24, 0.53],
-        #               [0, 0.53, 2.8]])
-        #
-        # D = np.array([[0.66, 0, 0],
-        #               [0, 1.3, 2.8],
-        #               [0, 0, 1.9]])
-        #
-        # Kp = (natural_frequency**2) @ M
-        # Kd = 2 * relative_damping_ratio @ natural_frequency @ M - D
-        # Ki = 0.1 * Kp * natural_frequency
-
         self.p_gain = 1.0
         self.declare_parameter(
             "p_gain",

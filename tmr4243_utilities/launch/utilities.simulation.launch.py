@@ -6,6 +6,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from cybership_utilities.launch import anon
 
+
 def generate_launch_description():
 
     vessel_name = "enterprise"
@@ -23,9 +24,10 @@ def generate_launch_description():
         launch.launch_description_sources.PythonLaunchDescriptionSource(
             launch.substitutions.PathJoinSubstitution(
                 [
-                    launch_ros.substitutions.FindPackageShare("cybership_simulator"),
+                    launch_ros.substitutions.FindPackageShare(
+                        "cybership_simulator"),
                     "launch",
-                    "simulator.launch.py",
+                    "voyager.launch.py",
                 ]
             )
         ),
@@ -36,10 +38,9 @@ def generate_launch_description():
         ],
     )
 
-
-
     ld = launch.LaunchDescription()
     ld.add_action(node_utilities)
     ld.add_action(description_launch)
 
     return ld
+

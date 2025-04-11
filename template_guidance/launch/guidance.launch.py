@@ -11,7 +11,8 @@ def generate_launch_description():
 
     arg_task = launch.actions.DeclareLaunchArgument(
         'task',
-        default_value=launch.substitutions.TextSubstitution(text='stationkeeping'),
+        default_value=launch.substitutions.TextSubstitution(
+            text='stationkeeping'),
         description='Guidance task type. Choose between stationkeeping, straight_line.',
         choices=['stationkeeping', 'straight_line']
     )
@@ -19,7 +20,8 @@ def generate_launch_description():
     arg_param_file = launch.actions.DeclareLaunchArgument(
         'param_file',
         default_value=launch.substitutions.PathJoinSubstitution(
-            [launch_ros.substitutions.FindPackageShare('template_guidance'), 'config', 'param.yaml']
+            [launch_ros.substitutions.FindPackageShare(
+                'template_guidance'), 'config', 'param.yaml']
         )
     )
 
@@ -30,7 +32,8 @@ def generate_launch_description():
         parameters=[
             {'task': launch.substitutions.LaunchConfiguration('task')},
             launch.substitutions.LaunchConfiguration('param_file')
-        ]
+        ],
+        output="screen"
     )
     return launch.LaunchDescription([
         arg_task,

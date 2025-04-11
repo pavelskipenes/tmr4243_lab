@@ -30,6 +30,7 @@ import numpy as np
 import rcl_interfaces.msg
 import rclpy
 import rclpy.node
+import std_msgs.msg
 import tmr4243_interfaces.msg
 
 
@@ -50,10 +51,14 @@ class Guidance(rclpy.node.Node):
         self.subs["observed_eta"] = self.create_subscription(
             tmr4243_interfaces.msg.Observer, '/tmr4243/observer', self.observer_callback, 10)
 
+        self.subs["eta"] = self.create_subscription(
+            std_msgs.msg.Float32MultiArray, '/tmr4243/state/eta', self.eta_callback, 10)
+
         self.last_observation: tmr4243_interfaces.msg.Observer | None = None
+        self.eta: std_msgs.msg.Float32MultiArray | None = None
         self.s = np.float64(0.0)
 
-        self.task = Guidance.TASK_STRAIGHT_LINE
+        self.task = Guidance.TASK_STATIONKEEPING
         self.declare_parameter(
             'task',
             self.task,
@@ -66,8 +71,27 @@ class Guidance(rclpy.node.Node):
         )
         # timer_period = 0.1  # seconds
         # self.timer = self.create_timer(timer_period, self.timer_callback)
+        # TODO: make into an input
+        self.waypoints = np.array(
+            [
+                # [0, 0],
 
-        self.guidance_period = np.float64(0.01)  # seconds
+                [4, 0],
+                # [4, 4],
+                # [0, 4],
+                #
+                # [0, 0],
+
+                # [-4, 0],
+                # [-4, 4],
+                # [0, 4],
+                #
+                # [0, 0],
+                #
+                # [0, -4],
+            ])
+
+        self.guidance_period = np.float64(0.1)  # seconds
         self.guidance_timer = self.create_timer(
             self.guidance_period, self.guidance_callback)
 
@@ -92,46 +116,35 @@ class Guidance(rclpy.node.Node):
         elif Guidance.TASK_STRAIGHT_LINE in self.task:
             if self.last_observation is None:
                 return
+            if self.eta is None:
+                return
 
-            # TODO: make into an input
-            waypoints = np.array(
-                [
-                    [4, 0],
-                    [4, 4],
-                    [0, 4],
-
-                    [0, 0],
-
-                    [-4, 0],
-                    [-4, 4],
-                    [0, 4],
-
-                    [0, 0],
-                    [0, -4],
-                ])
             # TODO: make into an input
             U_ref = np.float64(0.5)
 
-            if len(waypoints) <= 1:
+            if len(self.waypoints) <= 1:
                 self.get_logger().info("no more waypoints left")
                 # TODO: change to station keeping
                 # send the remaining point to station keeping
                 return
 
-            eta_d, eta_ds, eta_ds2, norm_p, = straight_line(
-                waypoints, self.s)
+            eta_d, eta_ds, eta_ds2, norm_p = straight_line(
+                self.waypoints, self.s)
 
             if close_enough(self.s):
-                self.get_logger().info("reached a waypoint")
+                self.get_logger().info(
+                    f"reached the waypoint {self.waypoints[0]}, there are {len(self.waypoints) - 1} waypoints left")
                 u_ref = np.float64(0.0)
-                waypoints = waypoints[1:]
+                self.waypoints = self.waypoints[1:]
                 self.s = np.float64(0.0)
             else:
                 u_ref = U_ref
 
-            eta_hat = self.last_observation.eta
+            eta_hat = np.array(self.last_observation.eta)
             eta_error = eta_hat - eta_d
 
+            # assert self.s >= 0, self.s
+            # assert self.s <= 1, self.s
             self.s, s_dot, v_s, v_ss = path(
                 eta_ds,
                 self.s,
@@ -140,6 +153,19 @@ class Guidance(rclpy.node.Node):
                 norm_p,
                 self.guidance_period,
             )
+            # assert self.s >= 0
+            # assert self.s <= 1
+            # np.clip(self.s, 0, 1)
+            # debug_locals = f"""
+            #     eta_ds = {eta_ds}
+            #     self.s = {self.s}
+            #     eta_error = {eta_error}
+            #     u_ref = {u_ref}
+            #     norm_p = {norm_p}
+            #     self.guidance_period = {self.guidance_period}
+            # """
+            # assert self.s >= 0, debug_locals
+            # assert self.s <= 1, debug_locals
 
             msg.eta_d = eta_d.flatten().tolist()
             msg.eta_ds = eta_ds.flatten().tolist()
@@ -164,7 +190,23 @@ class Guidance(rclpy.node.Node):
             self.get_logger().warn(
                 "disregarding observer message due to NaN elements in the observed bias")
             return
+
+        if self.last_observation is None:
+            self.get_logger().info("inserting waypoint")
+            self.waypoints = np.insert(self.waypoints, 0, msg.eta[0:1])
         self.last_observation = msg
+
+    def eta_callback(self, msg: std_msgs.msg.Float32MultiArray):
+        if np.isnan(msg.data).any():
+            self.get_logger().warn(
+                "disregarding eta message due to NaN elements in the position")
+            return
+
+        if self.eta is None:
+            self.waypoints = np.insert(self.waypoints, 0, msg.data[0:1])
+            self.get_logger().info("inserting waypoint")
+
+        self.eta = msg.data
 
 
 def main(args=None):

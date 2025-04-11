@@ -29,7 +29,7 @@ import tmr4243_interfaces.msg
 import std_msgs.msg
 import numpy as np
 
-from template_controller.PID_controller import PID_controller
+from template_controller.PID_controller import PID_controller, get_gains
 from template_controller.PD_FF_controller import PD_FF_controller
 from template_controller.backstepping_controller import backstepping_controller
 
@@ -56,118 +56,30 @@ class Controller(rclpy.node.Node):
         self.pubs["tau_cmd"] = self.create_publisher(
             std_msgs.msg.Float32MultiArray, '/tmr4243/command/tau', 1)
 
-        # Fossen tuning
-        # relative_damping_ratio = np.eye(3)
-        # period = 10
-        # natural_frequency = (2*np.pi/period) * np.eye(3)
-        #
-        # M = np.array([[16, 0, 0],
-        #               [0, 24, 0.53],
-        #               [0, 0.53, 2.8]])
-        #
-        # D = np.array([[0.66, 0, 0],
-        #               [0, 1.3, 2.8],
-        #               [0, 0, 1.9]])
-        #
-        # Kp = (natural_frequency**2) @ M
-        # Kd = 2 * relative_damping_ratio @ natural_frequency @ M - D
-        # Ki = 0.1 * Kp * natural_frequency
+        self.subs["eta"] = self.create_subscription(
+            std_msgs.msg.Float32MultiArray, '/tmr4243/state/eta', self.eta_callback, 10)
 
-        self.p_gain = 1.0
-        self.declare_parameter(
-            "p_gain",
-            self.p_gain,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Proportional gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE,
-                read_only=False
-            )
-        )
+        p_gain, i_gain, d_gain = get_gains(0, 0)
+        self.p_gain = p_gain
+        self.i_gain = i_gain
+        self.d_gain = d_gain
 
-        self.i_gain = 0.1
-        self.declare_parameter(
-            "i_gain",
-            self.i_gain,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Integral gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE,
-                read_only=False
-            )
-        )
-        self.d_gain = 0.4
-        self.declare_parameter(
-            "d_gain",
-            self.d_gain,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Derivative gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE,
-                read_only=False
-            )
-        )
         self.k1_gain = [6.8, 8.95, 1.0]
-        self.declare_parameter(
-            "k1_gain",
-            self.k1_gain,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="K1 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
-        self.k2_gain = [9.5, 9.5, 7.0] * 2
-        self.declare_parameter(
-            "k2_gain",
-            self.k2_gain,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="K2 gain",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_DOUBLE_ARRAY,
-                read_only=False
-            )
-        )
-
-        self.task = Controller.TASK_PD_FF_CONTROLLER
-        self.declare_parameter(
-            'task',
-            self.task,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Task",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_STRING,
-                read_only=False,
-                additional_constraints=f"Allowed values: {' '.join(Controller.TASKS)}"
-            )
-        )
-
-        self.p_gain = self.get_parameter(
-            "p_gain").get_parameter_value().double_value
-        self.i_gain = self.get_parameter(
-            "i_gain").get_parameter_value().double_value
-        self.d_gain = self.get_parameter(
-            "d_gain").get_parameter_value().double_value
-        self.k1_gain = self.get_parameter(
-            "k1_gain").get_parameter_value().double_array_value
-        self.k2_gain = self.get_parameter(
-            "k2_gain").get_parameter_value().double_array_value
+        self.k2_gain = [9.5*2, 9.5*2, 7.0*2]
 
         self.last_reference = None
 
         self.last_observation = None
+        self.eta = None
 
         # timer_period = 0.1  # seconds
         # self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        controller_period = 0.1  # seconds
+        controller_period = 0.01  # seconds
         self.controller_timer = self.create_timer(
             controller_period, self.controller_callback)
 
-        self.task = Controller.TASK_BACKSTEPPING_CONTROLLER
-
-    # def timer_callback(self):
-    #
-    #     self.task = self.get_parameter(
-    #         "task").get_parameter_value().string_value
-    #
-    #     self.get_logger().info(
-    #         f"Parameter task: {self.task}", throttle_duration_sec=1.0)
+        self.task = Controller.TASK_PD_FF_CONTROLLER
 
     def controller_callback(self):
 
@@ -185,7 +97,9 @@ class Controller(rclpy.node.Node):
                 self.last_observation,
                 self.last_reference,
                 self.p_gain,
-                self.d_gain
+                self.i_gain,
+                self.d_gain,
+                self.eta,
             )
         elif Controller.TASK_PID_CONTROLLER in self.task:
             tau = PID_controller(
@@ -196,12 +110,14 @@ class Controller(rclpy.node.Node):
                 self.d_gain
             )
         elif Controller.TASK_BACKSTEPPING_CONTROLLER in self.task:
-            tau = backstepping_controller(
+            tau, eta_error = backstepping_controller(
                 self.last_observation,
                 self.last_reference,
                 self.k1_gain,
-                self.k2_gain
+                self.k2_gain,
+                self.eta,
             )
+            self.get_logger().info(f"eta_error {eta_error}")
         else:
             tau = np.zeros((3, 1), dtype=np.float64)
 
@@ -217,6 +133,14 @@ class Controller(rclpy.node.Node):
         tau_cmd = std_msgs.msg.Float32MultiArray()
         tau_cmd.data = tau
         self.pubs["tau_cmd"].publish(tau_cmd)
+
+    def eta_callback(self, msg: std_msgs.msg.Float32MultiArray):
+        if np.isnan(msg.data).any():
+            self.get_logger().warn(
+                "disregarding eta message due to NaN elements in the position")
+            return
+
+        self.eta = msg.data
 
     def received_reference(self, msg: tmr4243_interfaces.msg.Reference):
         for eta_d, eta_ds, etd_ds2 in zip(msg.eta_d, msg.eta_ds, msg.eta_ds2):

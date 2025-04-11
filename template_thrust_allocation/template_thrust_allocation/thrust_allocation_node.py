@@ -53,7 +53,7 @@ class ThrustAllocation(rclpy.node.Node):
                 self.get_logger().warn("disregarding tau because elements includes NaN")
                 return
             if abs(val) > 3:
-                self.get_logger().warn(
+                self.get_logger().info(
                     f"disregarding tau becuase elements include gains too high for the system to handle: {val}")
                 return
 

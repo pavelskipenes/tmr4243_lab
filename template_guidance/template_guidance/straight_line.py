@@ -9,7 +9,9 @@ def straight_line(
     end: NDArray[np.float64] = waypoints[1]
     delta_p = end - start
 
-    heading_reference = np.arctan2(delta_p[1], delta_p[0])
+    # heading_reference = np.arctan2(delta_p[1], delta_p[0])
+    heading_reference = 0
+
     eta_ds = np.array(
         [
             delta_p[0],

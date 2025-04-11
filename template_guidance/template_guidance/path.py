@@ -15,6 +15,13 @@ def path(
     v_s = U_ref / norm_p
     omega_s, v_s, v_ss = update_law(eta_error, eta_ds, v_s)
 
-    s_dot: np.float64 = v_s + omega_s
+    s_dot = v_s + omega_s
+    # debug_locals = f"""
+    # s_dot = {s_dot}
+    # v_s = {v_s}
+    # omega_s = {omega_s}
+    # """
+    # assert s_dot >= 0, debug_locals
     s = s_old + s_dot * delta_time
+    np.clip(s, 0, 1)
     return s, s_dot, v_s, v_ss

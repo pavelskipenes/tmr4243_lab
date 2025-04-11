@@ -58,29 +58,19 @@ class Guidance(rclpy.node.Node):
         self.eta: std_msgs.msg.Float32MultiArray | None = None
         self.s = np.float64(0.0)
 
-        self.task = Guidance.TASK_STATIONKEEPING
-        self.declare_parameter(
-            'task',
-            self.task,
-            rcl_interfaces.msg.ParameterDescriptor(
-                description="Task",
-                type=rcl_interfaces.msg.ParameterType.PARAMETER_STRING,
-                read_only=False,
-                additional_constraints=f"Allowed values: {' '.join(Guidance.TASKS)}"
-            )
-        )
+        self.task = Guidance.TASK_STRAIGHT_LINE
         # timer_period = 0.1  # seconds
         # self.timer = self.create_timer(timer_period, self.timer_callback)
         # TODO: make into an input
         self.waypoints = np.array(
             [
-                # [0, 0],
+                [0, 0],
 
-                [4, 0],
-                # [4, 4],
-                # [0, 4],
-                #
-                # [0, 0],
+                [2, 0],
+                [2, 2],
+                [0, 2],
+
+                [0, 0],
 
                 # [-4, 0],
                 # [-4, 4],
